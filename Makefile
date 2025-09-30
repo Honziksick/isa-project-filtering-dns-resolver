@@ -1,7 +1,6 @@
 ################################################################################
 #                                                                              #
 # Project:      Filtering DNS Resolver                                         #
-#                                                                              #
 # University:   Faculty of Information Technology, BUT                         #
 # Subject:      ISA: Network Applications and Network Administration           #
 #                                                                              #
@@ -100,14 +99,15 @@ CXX = g++
 CXX_STD =-std=c++20
 WARNING_FLAGS = -Wall -Wextra -Werror -pedantic -Wshadow -Wconversion -Wsign-conversion -Wnull-dereference
 SANITIZE_FLAGS = -fsanitize=address -fsanitize=undefined
+THREAD_FLAGS = -pthread
 RELEASE_FLAGS = -O2 -DNDEBUG
 TEST_FLAGS = -O1 -g3 -DTESTING
 DEBUG_FLAGS = -O0 -g3 -DDEBUG
 
 # Build flags for different build types
-CXXFLAGS_RELEASE = $(CXX_STD) $(RELEASE_FLAGS)
-CXXFLAGS_TEST = $(CXX_STD) $(TEST_FLAGS) $(WARNING_FLAGS) $(SANITIZE_FLAGS)
-CXXFLAGS_DEBUG = $(CXX_STD) $(DEBUG_FLAGS) $(WARNING_FLAGS) $(SANITIZE_FLAGS)
+CXXFLAGS_RELEASE = $(CXX_STD) $(RELEASE_FLAGS) $(THREAD_FLAGS)
+CXXFLAGS_TEST = $(CXX_STD) $(TEST_FLAGS) $(WARNING_FLAGS) $(SANITIZE_FLAGS) $(THREAD_FLAGS)
+CXXFLAGS_DEBUG = $(CXX_STD) $(DEBUG_FLAGS) $(WARNING_FLAGS) $(SANITIZE_FLAGS) $(THREAD_FLAGS)
 
 
 ###                  ###
@@ -364,7 +364,7 @@ endif
 #                                                                              #
 ################################################################################
 
-### T # test-exceptions: # Builds and runs the 'CustomExceptions' test (not allowed for submission)
+### T # test-exceptions: # Builds and runs the 'CustomException' test (not allowed for submission)
 ifndef SUBMISSION_MODE
 test-exceptions:
 	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Test

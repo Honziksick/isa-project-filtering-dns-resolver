@@ -1,7 +1,6 @@
 ################################################################################
 #                                                                              #
 # Project:      Filtering DNS Resolver                                         #
-#                                                                              #
 # University:   Faculty of Information Technology, BUT                         #
 # Subject:      ISA: Network Applications and Network Administration           #
 #                                                                              #
@@ -45,22 +44,23 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Set compilation flags
 set(WARNING_FLAGS -Wall -Wextra -Werror -pedantic -Wshadow -Wconversion -Wsign-conversion -Wnull-dereference)
 set(SANITIZE_FLAGS -fsanitize=address -fsanitize=undefined)
+set(THREAD_FLAGS -pthread)
 set(RELEASE_FLAGS -O2 -DNDEBUG)
 set(TEST_FLAGS -O1 -g3 -DTESTING)
 set(DEBUG_FLAGS -O0 -g3 -DDEBUG)
 
 # Default build type to Release if not specified
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_options(${RELEASE_FLAGS})
-    message(STATUS "Build type: RELEASE with '${RELEASE_FLAGS}'")
+    add_compile_options(${RELEASE_FLAGS} ${THREAD_FLAGS})
+    message(STATUS "Build type: RELEASE with '${RELEASE_FLAGS} ${THREAD_FLAGS}'")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Test")
-    add_compile_options(${TEST_FLAGS} ${WARNING_FLAGS} ${SANITIZE_FLAGS})
+    add_compile_options(${TEST_FLAGS} ${WARNING_FLAGS} ${THREAD_FLAGS} ${SANITIZE_FLAGS})
     add_link_options(${SANITIZE_FLAGS})
-    message(STATUS "Build type: TEST with '${TEST_FLAGS} ${WARNING_FLAGS} ${SANITIZE_FLAGS}'")
+    message(STATUS "Build type: TEST with '${TEST_FLAGS} ${WARNING_FLAGS} ${THREAD_FLAGS} ${SANITIZE_FLAGS}'")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(${DEBUG_FLAGS} ${WARNING_FLAGS} ${SANITIZE_FLAGS})
+    add_compile_options(${DEBUG_FLAGS} ${WARNING_FLAGS} ${THREAD_FLAGS} ${SANITIZE_FLAGS})
     add_link_options(${SANITIZE_FLAGS})
-    message(STATUS "Build type: DEBUG with '${DEBUG_FLAGS} ${WARNING_FLAGS} ${SANITIZE_FLAGS}'")
+    message(STATUS "Build type: DEBUG with '${DEBUG_FLAGS} ${WARNING_FLAGS} ${THREAD_FLAGS} ${SANITIZE_FLAGS}'")
 endif()
 
 
