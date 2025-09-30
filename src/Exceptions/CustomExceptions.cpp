@@ -1,0 +1,85 @@
+/*******************************************************************************
+ *                                                                             *
+ * Project:      Filtering DNS Resolver                                        *
+ * University:   Faculty of Information Technology, BUT                        *
+ * Subject:      ISA: Network Applications and Network Administration          *
+ *                                                                             *
+ * File:         CustomExceptions.cpp                                          *
+ * Author:       Jan Kalina <xkalinj00>                                        *
+ *                                                                             *
+ * Created:      23.09.2025                                                    *
+ * Last edit:    24.09.2025                                                    *
+ *                                                                             *
+ * Description:  Implementation file for the `BaseCustomException` class used  *
+ *               in the Filtering DNS Resolver.                                *
+ *                                                                             *
+ ******************************************************************************/
+/**
+ * @file CustomExceptions.cpp
+ * @author Jan Kalina \<xkalinj00>
+ * @brief Implementation file for the `CustomExceptions` classes.
+ */
+
+#include "Exceptions/CustomExceptions.hpp"
+#include "Constants/ExceptionMessages.hpp"
+#include "Enums/ExitCodes.hpp"
+#include <string>   // std::string
+#include <utility>  // std::move
+
+using namespace FilteringDNSResolver::Constants;
+using namespace FilteringDNSResolver::Enums;
+using namespace std;
+
+namespace FilteringDNSResolver::Exceptions
+{
+    HelpRequestedException::HelpRequestedException() noexcept
+        : BaseCustomException{
+            ExitCodes::SUCCESS,
+            ExceptionMessages::HELP_REQUESTED_MSG,
+            std::string{}
+        } {}
+
+    InternalErrorException::InternalErrorException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::INTERNAL_ERROR,
+            ExceptionMessages::INTERNAL_ERROR_MSG,
+            move(detail)
+        } {}
+
+    InvalidArgumentException::InvalidArgumentException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::INVALID_ARGUMENT_ERROR,
+            ExceptionMessages::INVALID_ARGUMENT_ERROR_MSG,
+            move(detail)
+        } {}
+
+    UknownErrorException::UknownErrorException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::UNKNOWN_ERROR,
+            ExceptionMessages::UNKNOWN_ERROR_MSG,
+            move(detail)
+        } {}
+
+    ProtocolErrorException::ProtocolErrorException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::PROTOCOL_ERROR,
+            ExceptionMessages::PROTOCOL_ERROR_MSG,
+            move(detail)
+        } {}
+
+    HostnameResolutionErrorException::HostnameResolutionErrorException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::HOSTNAME_RESOLUTION_ERROR,
+            ExceptionMessages::HOSTNAME_RESOLUTION_ERROR_MSG,
+            move(detail)
+        } {}
+
+    UserInterruptionException::UserInterruptionException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::SUCCESS,
+            ExceptionMessages::USER_INTERRUPTION_MSG,
+            move(detail)
+        } {}
+} // FilteringDNSResolver::Exceptions
+
+/*** end of file CustomExceptions.cpp ***/
