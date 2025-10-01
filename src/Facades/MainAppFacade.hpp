@@ -26,6 +26,7 @@
 #define MAIN_APP_FACADE_HPP
 
 #include "Arguments/CommandLineOptions.hpp"
+#include <netdb.h>  // sockaddr_in
 #include <string>
 #include <vector>
 
@@ -57,6 +58,7 @@ namespace FilteringDNSResolver::Facades
     private:
         Arguments::CommandLineOptions mCommandLineOptions{};   /**< Parsed command line options. */
         std::vector<std::string> mFilterFileContent{};         /**< List of filters loaded from the filter file. */
+        sockaddr_in mResolverAddress{};                        /**< Resolved upstream DNS server address info. */
 
         /**
          * @brief Initializes command line options by parsing the input arguments.
@@ -67,6 +69,8 @@ namespace FilteringDNSResolver::Facades
         void getCommandLineOptions(int argc, char *argv[]);
 
         void loadAndProcessFilterFileContent(const std::string &filterFilePath);
+
+        void getResolverAddress(const std::string &resolverHostname);
     }; // MainAppFacade
 } // FilteringDNSResolver::Facades
 
