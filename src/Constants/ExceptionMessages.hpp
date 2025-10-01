@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    24.09.2025                                                    *
+ * Last edit:    01.10.2025                                                    *
  *                                                                             *
  * Description:  This file contains constant exception messages used in the    *
  *               Filtering DNS Resolver project.                               *
@@ -47,6 +47,11 @@ namespace FilteringDNSResolver::Constants
          * @brief Error message for internal error.
          */
         static constexpr auto INTERNAL_ERROR_MSG = "Internal error occurred.";
+
+        /**
+         * @brief Error message for internal error.
+         */
+        static constexpr auto INVALID_FILTER_FILE_CONTENT_ERROR_MSG = "The provided filter file contains invalid content.";
 
         /**
          * @brief Error message for unknown error.

@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    24.09.2025                                                    *
+ * Last edit:    01.10.2025                                                    *
  *                                                                             *
  * Description:  Header file for the `CustomExceptions` classes used in the    *
  *               Filtering DNS Resolver.                                       *
@@ -82,6 +82,21 @@ namespace FilteringDNSResolver::Exceptions
          */
         explicit UknownErrorException(std::string detail = "") noexcept;
     }; // UknownErrorException
+
+    /**
+     * @class InvalidFilterFileContentException
+     * @brief Exception class used when domain in invalid format is detected in
+     *        the filter file.
+     */
+    class InvalidFilterFileContentException final : public BaseCustomException {
+    public:
+        /**
+         * @brief Constructor for `InvalidFilterFileContentException`.
+         *
+         * @param detail Additional information about the error.
+         */
+        explicit InvalidFilterFileContentException(std::string detail = "") noexcept;
+    }; // InvalidFilterFileContentException
 
     /**
      * @class ProtocolErrorException

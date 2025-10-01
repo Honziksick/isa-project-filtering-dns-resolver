@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    24.09.2025                                                    *
+ * Last edit:    01.10.2025                                                    *
  *                                                                             *
  * Description:  Implementation of the `EnumMaps` class, which provides        *
  *               static mapping utilities for converting enum values to        *
@@ -36,6 +36,7 @@ namespace FilteringDNSResolver::Enums::Mapping
             {ExitCodes::SUCCESS, "Success"},
             {ExitCodes::INTERNAL_ERROR, "Internal Error"},
             {ExitCodes::INVALID_ARGUMENT_ERROR, "Invalid Argument Error"},
+            {ExitCodes::INVALID_FILTER_FILE_CONTENT_ERROR, "Invalid Filter File Content Error"},
             {ExitCodes::UNKNOWN_ERROR, "Unknown Error"},
             {ExitCodes::PROTOCOL_ERROR, "Protocol Error"},
             {ExitCodes::HOSTNAME_RESOLUTION_ERROR, "Hostname Resolution Error"},
