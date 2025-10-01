@@ -26,6 +26,8 @@
 #define MAIN_APP_FACADE_HPP
 
 #include "Arguments/CommandLineOptions.hpp"
+#include <string>
+#include <vector>
 
 namespace FilteringDNSResolver::Facades
 {
@@ -40,7 +42,7 @@ namespace FilteringDNSResolver::Facades
         /**
          * @brief Default constructor for the `MainAppFacade` class.
          */
-        explicit MainAppFacade();
+        explicit MainAppFacade() = default;
 
         /**
          * @brief Facade class for the Filtering DNS Resolver application.
@@ -53,7 +55,8 @@ namespace FilteringDNSResolver::Facades
         void runResolver(int argc, char *argv[]);
 
     private:
-        Common::CommandLineOptions mCommandLineOptions;   /**< Parsed command line options. */
+        Arguments::CommandLineOptions mCommandLineOptions{};   /**< Parsed command line options. */
+        std::vector<std::string> mFilterFileContent{};         /**< List of filters loaded from the filter file. */
 
         /**
          * @brief Initializes command line options by parsing the input arguments.
@@ -62,8 +65,10 @@ namespace FilteringDNSResolver::Facades
          * @param argv Array of argument strings.
          */
         void getCommandLineOptions(int argc, char *argv[]);
+
+        void loadAndProcessFilterFileContent(const std::string &filterFilePath);
     }; // MainAppFacade
-} // OmegaL4Scanner::Facades
+} // FilteringDNSResolver::Facades
 
 #endif // MAIN_APP_FACADE_HPP
 

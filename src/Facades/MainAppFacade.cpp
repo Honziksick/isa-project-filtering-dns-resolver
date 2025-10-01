@@ -24,30 +24,26 @@
 
 #include "Facades/MainAppFacade.hpp"
 #include "Arguments/ArgumentParser.hpp"
-#include "Exceptions/CustomExceptions.hpp"
+#include "Filter/FilterFileLoader.hpp"
 #include "Utilities/ExceptionHandler.hpp"
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception
 #include <cstdlib>    // std::exit
 
 using namespace FilteringDNSResolver::Arguments;
-using namespace FilteringDNSResolver::Exceptions;
+using namespace FilteringDNSResolver::Filter;
 using namespace FilteringDNSResolver::Utilities;
 using namespace std;
 
 namespace FilteringDNSResolver::Facades
 {
-    MainAppFacade::MainAppFacade() = default;
-
     void MainAppFacade::runResolver(const int argc, char *argv[]) {
         try {
             getCommandLineOptions(argc, argv);
 
+            loadAndProcessFilterFileContent(mCommandLineOptions.mFilterFilePath);
+            // TODO
 
-            // getInterfaceInfo();
-
-            // const ScannerController scannerController(mCommandLineOptions, mInterfaceInfo);
-            // scannerController.scanL4Layer();
         }
         catch(const exception &e) {
             ExceptionHandler::handleError(e, ExceptionHandler::TERMINATE);
@@ -59,6 +55,12 @@ namespace FilteringDNSResolver::Facades
         mCommandLineOptions = ArgumentParser::parseArguments(argc, argv);
         logger("Command line options parsed successfully");
     } // MainAppFacade::getCommandLineOptions()
-} // OmegaL4Scanner::Facades
+
+    void MainAppFacade::loadAndProcessFilterFileContent(const string &filterFilePath) {
+        logger("Loading and processing filter file content...");
+        mFilterFileContent = FilterFileLoader::loadFilter(filterFilePath);
+        logger("Filter file content loaded successfully");
+    } // MainAppFacade::getCommandLineOptions()
+} // FilteringDNSResolver::Facades
 
 /*** end of file MainAppFacade.cpp ***/
