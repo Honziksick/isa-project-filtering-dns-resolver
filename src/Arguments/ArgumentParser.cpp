@@ -76,9 +76,9 @@ namespace FilteringDNSResolver::Arguments
         }
 
         logger(
-                "Arguments parsed successfully: mResolverServer: %s, mListenPort: %u, "
+                "Arguments parsed successfully: mResolverHostname: %s, mListenPort: %u, "
                 "mFilterFilePath: %s, mVerbose: %s,",
-                commandLineOptions.mResolverServer.c_str(),
+                commandLineOptions.mResolverHostname.c_str(),
                 commandLineOptions.mListenPort,
                 commandLineOptions.mFilterFilePath.c_str(),
                 commandLineOptions.mVerbose ? "true" : "false");
@@ -102,7 +102,7 @@ namespace FilteringDNSResolver::Arguments
         // Add options
         app.set_help_flag("-h,--help", "Display this help message and exit with code 0.");
 
-        app.add_option("-s,--server", commandLineOptions.mResolverServer,
+        app.add_option("-s,--server", commandLineOptions.mResolverHostname,
                        "Upstream DNS resolver (hostname or IPv4).")
            ->required(true)
            ->expected(1);
