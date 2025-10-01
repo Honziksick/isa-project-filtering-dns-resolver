@@ -37,7 +37,6 @@
  */
 #include "Arguments/CLI11.hpp"
 
-using namespace FilteringDNSResolver::Common;
 using namespace FilteringDNSResolver::Enums;
 using namespace FilteringDNSResolver::Constants;
 using namespace FilteringDNSResolver::Exceptions;
@@ -77,10 +76,11 @@ namespace FilteringDNSResolver::Arguments
         }
 
         logger(
-                "Arguments parsed successfully: mResolverServer: %s, mListenPort: %u, mFilterFile: %s, mVerbose: %s,",
+                "Arguments parsed successfully: mResolverServer: %s, mListenPort: %u, "
+                "mFilterFilePath: %s, mVerbose: %s,",
                 commandLineOptions.mResolverServer.c_str(),
                 commandLineOptions.mListenPort,
-                commandLineOptions.mFilterFile.c_str(),
+                commandLineOptions.mFilterFilePath.c_str(),
                 commandLineOptions.mVerbose ? "true" : "false");
         logger("Finished parsing arguments");
 
@@ -114,7 +114,7 @@ namespace FilteringDNSResolver::Arguments
            ->expected(0, 1)
            ->check(CLI::Range(CustomLimits::MIN_SERVER_PORT, CustomLimits::MAX_SERVER_PORT));
 
-        app.add_option("-f,--filter-file", commandLineOptions.mFilterFile,
+        app.add_option("-f,--filter-file", commandLineOptions.mFilterFilePath,
                        "Path to the ASCII file with blocked domains (one per line; '#' and empty lines ignored).")
            ->required(true)
            ->expected(1);

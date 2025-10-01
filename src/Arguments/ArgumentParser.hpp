@@ -25,7 +25,7 @@
 #ifndef COMMAND_LINE_PARSER_HPP
 #define COMMAND_LINE_PARSER_HPP
 
-#include "CommandLineOptions.hpp"
+#include "Arguments/CommandLineOptions.hpp"
 
 /* CLI11 je header-only library for command-line parsing
  * Source: https://github.com/CLIUtils/CLI11
@@ -51,7 +51,7 @@ namespace FilteringDNSResolver::Arguments
          * @param argv Array of argument strings.
          * @return `CommandLineOptions` instance initialized with parsed values.
          */
-        static Common::CommandLineOptions parseArguments(int argc, char *argv[]);
+        static CommandLineOptions parseArguments(int argc, char *argv[]);
 
     private:
         /**
@@ -61,7 +61,7 @@ namespace FilteringDNSResolver::Arguments
          * @param app Reference to the CLI application instance.
          * @param commandLineOptions Reference to the `CommandLineOptions` object to be populated.
          */
-        static void setupCliApp(CLI::App &app, Common::CommandLineOptions &commandLineOptions);
+        static void setupCliApp(CLI::App &app, CommandLineOptions &commandLineOptions);
     }; // ArgumentParser
 } // FilteringDNSResolver::Arguments
 

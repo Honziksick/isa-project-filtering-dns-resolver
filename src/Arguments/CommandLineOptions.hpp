@@ -24,11 +24,11 @@
 #ifndef COMMAND_LINE_OPTIONS_HPP
 #define COMMAND_LINE_OPTIONS_HPP
 
-#include "Constants/DefaultCommandLineOptions.hpp"
+#include "Constants/DefaultOptions.hpp"
 #include <string>   // std::string
 #include <cstdint>  // uint8_t, uint16_t
 
-namespace FilteringDNSResolver::Common
+namespace FilteringDNSResolver::Arguments
 {
     /**
      * @class CommandLineOptions
@@ -38,8 +38,8 @@ namespace FilteringDNSResolver::Common
     class CommandLineOptions final {
     public:
         std::string mResolverServer;                                            /**< Server IP address or hostname.       */
-        uint16_t mListenPort{Constants::DefaultCliOptions::DEFAULT_DNS_PORT};   /**< Server port number.                  */
-        std::string mFilterFile;                                                /**< File containing the unwated domains. */
+        uint16_t mListenPort{Constants::DefaultOptions::DEFAULT_LISTEN_PORT};   /**< Server port number.                  */
+        std::string mFilterFilePath;                                            /**< File containing the unwated domains. */
         bool mVerbose{false};                                                   /**< Verbose mode flag.                   */
 
         /**
@@ -54,7 +54,7 @@ namespace FilteringDNSResolver::Common
          */
         bool operator==(const CommandLineOptions &other) const = default;
     }; // CommandLineOptions
-} // FilteringDNSResolver::Common
+} // FilteringDNSResolver::Arguments
 
 #endif // COMMAND_LINE_OPTIONS_HPP
 
