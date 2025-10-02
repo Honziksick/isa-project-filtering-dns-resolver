@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    01.10.2025                                                    *
+ * Last edit:    02.10.2025                                                    *
  *                                                                             *
  * Description:  Implementation file for the `BaseCustomException` class used  *
  *               in the Filtering DNS Resolver.                                *
@@ -61,11 +61,18 @@ namespace FilteringDNSResolver::Exceptions
         } {}
 
     InvalidFilterFileContentException::InvalidFilterFileContentException(string detail) noexcept
-    : BaseCustomException{
-        ExitCodes::INVALID_FILTER_FILE_CONTENT_ERROR,
-        ExceptionMessages::INVALID_FILTER_FILE_CONTENT_ERROR_MSG,
-        move(detail)
-    } {}
+        : BaseCustomException{
+            ExitCodes::INVALID_FILTER_FILE_CONTENT_ERROR,
+            ExceptionMessages::INVALID_FILTER_FILE_CONTENT_ERROR_MSG,
+            move(detail)
+        } {}
+
+    SocketErrorException::SocketErrorException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::SOCKET_ERROR,
+            ExceptionMessages::SOCKET_ERROR_MSG,
+            move(detail)
+        } {}
 
     ProtocolErrorException::ProtocolErrorException(string detail) noexcept
         : BaseCustomException{

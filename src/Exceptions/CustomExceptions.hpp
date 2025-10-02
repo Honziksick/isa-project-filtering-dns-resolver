@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    01.10.2025                                                    *
+ * Last edit:    02.10.2025                                                    *
  *                                                                             *
  * Description:  Header file for the `CustomExceptions` classes used in the    *
  *               Filtering DNS Resolver.                                       *
@@ -97,6 +97,20 @@ namespace FilteringDNSResolver::Exceptions
          */
         explicit InvalidFilterFileContentException(std::string detail = "") noexcept;
     }; // InvalidFilterFileContentException
+
+    /**
+     * @class SocketErrorException
+     * @brief Exception class for socket related errors.
+     */
+    class SocketErrorException final : public BaseCustomException {
+    public:
+        /**
+         * @brief Constructor for `SocketErrorException`.
+         *
+         * @param detail Additional information about the error.
+         */
+        explicit SocketErrorException(std::string detail = "") noexcept;
+    }; // SocketErrorException
 
     /**
      * @class ProtocolErrorException

@@ -39,6 +39,7 @@ namespace FilteringDNSResolver::Enums::Mapping
             {ExitCodes::INVALID_FILTER_FILE_CONTENT_ERROR, "Invalid Filter File Content Error"},
             {ExitCodes::UNKNOWN_ERROR, "Unknown Error"},
             {ExitCodes::PROTOCOL_ERROR, "Protocol Error"},
+            {ExitCodes::SOCKET_ERROR, "Socket Error"},
             {ExitCodes::HOSTNAME_RESOLUTION_ERROR, "Hostname Resolution Error"},
             {ExitCodes::USER_INTERRUPTION_ERROR, "User Interruption Error"}
         };
