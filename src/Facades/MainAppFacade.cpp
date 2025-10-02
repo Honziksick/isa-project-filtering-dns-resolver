@@ -27,7 +27,7 @@
 #include "Configurators/ResolverSetup.hpp"
 #include "Filter/FilterFileLoader.hpp"
 #include "Filter/DomainFilter.hpp"
-#include "Networking/UDPSockets.hpp"
+#include "Networking/UdpSockets.hpp"
 #include "Utilities/ExceptionHandler.hpp"
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception

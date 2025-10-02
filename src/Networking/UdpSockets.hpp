@@ -4,7 +4,7 @@
  * University:   Faculty of Information Technology, BUT                        *
  * Subject:      ISA: Network Applications and Network Administration          *
  *                                                                             *
- * File:         UDPSockets.hpp                                                *
+ * File:         UdpSockets.hpp                                                *
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      02.10.2025                                                    *
@@ -14,7 +14,7 @@
  *                                                                             *
  ******************************************************************************/
 /**
- * @file UDPSockets.hpp
+ * @file UdpSockets.hpp
  * @author Jan Kalina \<xkalinj00>
  * @brief
  */
@@ -63,4 +63,4 @@ namespace FilteringDNSResolver::Networking
 
 #endif // UDP_SOCKETS_HPP
 
-/*** end of file UDPSockets.hpp ***/
+/*** end of file UdpSockets.hpp ***/

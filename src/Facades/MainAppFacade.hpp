@@ -27,7 +27,7 @@
 
 #include "Arguments/CommandLineOptions.hpp"
 #include "Filter/DomainFilter.hpp"
-#include "Networking/UDPSockets.hpp"
+#include "Networking/UdpSockets.hpp"
 #include <netdb.h>  // sockaddr_in
 #include <memory>
 #include <string>

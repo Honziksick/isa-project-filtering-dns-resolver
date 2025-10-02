@@ -4,7 +4,7 @@
  * University:   Faculty of Information Technology, BUT                        *
  * Subject:      ISA: Network Applications and Network Administration          *
  *                                                                             *
- * File:         UDPSockets.cpp                                                *
+ * File:         UdpSockets.cpp                                                *
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      02.10.2025                                                    *
@@ -14,7 +14,7 @@
  *                                                                             *
  ******************************************************************************/
 
-#include "Networking/UDPSockets.hpp"
+#include "Networking/UdpSockets.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Utilities/Logger.hpp"
 #include <netinet/in.h>  // sockaddr_in, INADDR_ANY, htons(), htonl()
@@ -31,14 +31,14 @@ namespace FilteringDNSResolver::Networking
 {
     UdpSockets::UdpSockets(const int resolverSocketFd, const int listenerSocketFd)
         : mResolverSocketFd{resolverSocketFd},
-          mListenerSocketFd{listenerSocketFd} {} // UdpSockets::UDPSockets
+          mListenerSocketFd{listenerSocketFd} {} // UdpSockets::UdpSockets
 
     UdpSockets::UdpSockets(UdpSockets &&otherUdpSockets) noexcept
         : mResolverSocketFd(otherUdpSockets.mResolverSocketFd),
           mListenerSocketFd(otherUdpSockets.mListenerSocketFd) {
         otherUdpSockets.mListenerSocketFd = INVALID_FD;
         otherUdpSockets.mResolverSocketFd = INVALID_FD;
-    } // UdpSockets::UDPSockets
+    } // UdpSockets::UdpSockets
 
     UdpSockets &UdpSockets::operator=(UdpSockets &&otherUdpSockets) noexcept {
         if(this != &otherUdpSockets) {
@@ -53,7 +53,7 @@ namespace FilteringDNSResolver::Networking
 
     UdpSockets::~UdpSockets() noexcept {
         closeUdpSockets();
-    } // UdpSockets::~UDPSockets
+    } // UdpSockets::~UdpSockets
 
     UdpSockets UdpSockets::openUdpSockets(const uint16_t listenerPort) {
         // Create listener socket
@@ -104,12 +104,12 @@ namespace FilteringDNSResolver::Networking
 
         logger("UDP sockets ready: 'listenerFd = %d', 'resolverSocketFd = %d'", listenerSocketFd, resolverSocketFd);
         return {resolverSocketFd, listenerSocketFd};
-    } // UdpSockets::openUDPSockets
+    } // UdpSockets::openUdpSockets
 
     void UdpSockets::closeUdpSockets() noexcept {
         closeResolverSocket();
         closeListenerSocket();
-    } // UdpSockets::closeUDPSockets
+    } // UdpSockets::closeUdpSockets
 
     int UdpSockets::getResolverSocketFd() const noexcept {
         return mResolverSocketFd;
@@ -138,4 +138,4 @@ namespace FilteringDNSResolver::Networking
     } // UdpSockets::closeListenerSocket
 } // FilteringDNSResolver::Networking
 
-/*** end of file UDPSockets.cpp ***/
+/*** end of file UdpSockets.cpp ***/
