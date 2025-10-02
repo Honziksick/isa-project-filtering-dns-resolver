@@ -26,9 +26,13 @@
 #include "Arguments/ArgumentParser.hpp"
 #include "Configurators/ResolverSetup.hpp"
 #include "Filter/FilterFileLoader.hpp"
+#include "Filter/DomainFilter.hpp"
 #include "Utilities/ExceptionHandler.hpp"
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception
+#include <memory>     // std::make_unique
+#include <string>
+#include <vector>
 
 using namespace FilteringDNSResolver::Arguments;
 using namespace FilteringDNSResolver::Configurators;
@@ -40,8 +44,13 @@ namespace FilteringDNSResolver::Facades
 {
     void MainAppFacade::runResolver(const int argc, char *argv[]) {
         try {
+            // First we parse command line options
             getCommandLineOptions(argc, argv);
-            loadAndProcessFilterFileContent(mCommandLineOptions.mFilterFilePath);
+
+            // After we create the domain filter instance
+            buildDomainFilter(mCommandLineOptions.mFilterFilePath);
+
+            // Next we resolve the upstream DNS server address
             getResolverAddress(mCommandLineOptions.mResolverHostname);
 
             // TODO
@@ -57,17 +66,17 @@ namespace FilteringDNSResolver::Facades
         logger("Command line options parsed successfully");
     } // MainAppFacade::getCommandLineOptions()
 
-    void MainAppFacade::loadAndProcessFilterFileContent(const string &filterFilePath) {
-        logger("Loading and processing filter file content...");
-        mFilterFileContent = FilterFileLoader::loadFilter(filterFilePath);
-        logger("Filter file content loaded successfully");
-    } // MainAppFacade::getCommandLineOptions()
-
     void MainAppFacade::getResolverAddress(const string &resolverHostname) {
-        logger("Resolving upstream DNS server address...");
+        logger("Resolving resolver DNS server address...");
         mResolverAddress = ResolverSetup::setupResolver(resolverHostname);
-        logger("Upstream DNS server address resolved successfully");
+        logger("Resolver DNS server address resolved successfully");
     } // MainAppFacade::getResolverAddress()
+
+    void MainAppFacade::buildDomainFilter(const string &filterFilePath) {
+        logger("Building domain filter...");
+        mDomainFilterPtr = make_unique<DomainFilter>(FilterFileLoader::loadFilter(filterFilePath));
+        logger("Domain filter built successfully");
+    } // MainAppFacade::buildDomainFilter()
 } // FilteringDNSResolver::Facades
 
 /*** end of file MainAppFacade.cpp ***/

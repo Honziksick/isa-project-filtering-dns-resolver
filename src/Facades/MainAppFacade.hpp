@@ -26,9 +26,10 @@
 #define MAIN_APP_FACADE_HPP
 
 #include "Arguments/CommandLineOptions.hpp"
+#include "Filter/DomainFilter.hpp"
 #include <netdb.h>  // sockaddr_in
+#include <memory>
 #include <string>
-#include <vector>
 
 namespace FilteringDNSResolver::Facades
 {
@@ -57,7 +58,7 @@ namespace FilteringDNSResolver::Facades
 
     private:
         Arguments::CommandLineOptions mCommandLineOptions{};   /**< Parsed command line options. */
-        std::vector<std::string> mFilterFileContent{};         /**< List of filters loaded from the filter file. */
+        std::unique_ptr<Filter::DomainFilter> mDomainFilterPtr{nullptr};          /**< Pointer to the domain filter instance. */
         sockaddr_in mResolverAddress{};                        /**< Resolved upstream DNS server address info. */
 
         /**
@@ -68,9 +69,9 @@ namespace FilteringDNSResolver::Facades
          */
         void getCommandLineOptions(int argc, char *argv[]);
 
-        void loadAndProcessFilterFileContent(const std::string &filterFilePath);
-
         void getResolverAddress(const std::string &resolverHostname);
+
+        void buildDomainFilter(const std::string &filterFilePath);
     }; // MainAppFacade
 } // FilteringDNSResolver::Facades
 
