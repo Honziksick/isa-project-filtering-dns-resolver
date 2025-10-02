@@ -54,7 +54,7 @@ namespace FilteringDNSResolver::Configurators
         // Perform the address resolution
         addrinfo *pResult{nullptr};
         const int getaddrinfoError = getaddrinfo(hostname.c_str(),
-                                                 to_string(DefaultOptions::DEFAULT_UPSTREAM_PORT).c_str(),
+                                                 to_string(DefaultOptions::DEFAULT_RESOLVER_PORT).c_str(),
                                                  &hints,
                                                  &pResult);
 

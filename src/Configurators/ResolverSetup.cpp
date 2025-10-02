@@ -48,7 +48,7 @@ namespace FilteringDNSResolver::Configurators
             // Copy the resolved address into the sockaddr_in structure and set its parameters
             memcpy(&resolverAddress, resolvedAddressInfo->ai_addr, sizeof(sockaddr_in));
             resolverAddress.sin_family = AF_INET;
-            resolverAddress.sin_port = htons(DefaultOptions::DEFAULT_UPSTREAM_PORT);
+            resolverAddress.sin_port = htons(DefaultOptions::DEFAULT_RESOLVER_PORT);
         }
         else {
             freeaddrinfo(resolvedAddressInfo);

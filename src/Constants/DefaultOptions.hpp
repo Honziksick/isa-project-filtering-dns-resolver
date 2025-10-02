@@ -23,7 +23,7 @@
 #ifndef DEFAULT_OPTIONS_HPP
 #define DEFAULT_OPTIONS_HPP
 
-#include <cstdint>  // uint8_t, uint16_t
+#include <cstdint>  // uint16_t
 
 namespace FilteringDNSResolver::Constants
 {
@@ -34,8 +34,8 @@ namespace FilteringDNSResolver::Constants
      */
     class DefaultOptions {
     public:
-        static constexpr uint16_t DEFAULT_LISTEN_PORT = 53;     /**< Default local listening port number.     */
-        static constexpr uint8_t  DEFAULT_UPSTREAM_PORT = 53;   /**< Default upstream DNS server port number. */
+        static constexpr uint16_t DEFAULT_LISTENER_PORT = 53;  /**< Default local listening port number.  */
+        static constexpr uint16_t DEFAULT_RESOLVER_PORT = 53;  /**< Default DNS resolver port number.     */
     }; // DefaultCliOptions
 } // FilteringDNSResolver::Constants
 

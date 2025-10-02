@@ -38,7 +38,7 @@ namespace FilteringDNSResolver::Arguments
     class CommandLineOptions final {
     public:
         std::string mResolverHostname;                                            /**< Server IP address or hostname.       */
-        uint16_t mListenPort{Constants::DefaultOptions::DEFAULT_LISTEN_PORT};   /**< Server port number.                  */
+        uint16_t mListenPort{Constants::DefaultOptions::DEFAULT_LISTENER_PORT};   /**< Server port number.                  */
         std::string mFilterFilePath;                                            /**< File containing the unwated domains. */
         bool mVerbose{false};                                                   /**< Verbose mode flag.                   */
 
