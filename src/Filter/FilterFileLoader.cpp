@@ -26,7 +26,7 @@
 #include "Utilities/Logger.hpp"
 #include <algorithm>  // std::transform
 #include <fstream>    // std::ifstream
-#include <ranges>     // std::ranges::find_if_not
+#include <ranges>     // std::ranges::find_if_not, std::ranges::sort, std::ranges::unique
 #include <cctype>     // std::isspace
 #include <vector>     // std::vector
 #include <string>     // std::string
@@ -60,8 +60,16 @@ namespace FilteringDNSResolver::Filter
             }
         }
 
+        // We remove duplicate domains from the list to optimize filtering
+        deduplicateDomains(filterDomainList);
+
         return filterDomainList;
     } // FilterFileLoader::loadFilter()
+
+    void FilterFileLoader::deduplicateDomains(vector<string> &filterDomainList) {
+        ranges::sort(filterDomainList);
+        filterDomainList.erase(ranges::unique(filterDomainList).begin(), filterDomainList.end());
+    } // FilterFileLoader::deduplicateDomains()
 } // FilteringDNSResolver::Filter
 
 /*** end of file FilterFileLoader.cpp ***/

@@ -32,6 +32,9 @@ namespace FilteringDNSResolver::Filter
     class FilterFileLoader final : FilterFilePreprocessor, FilterFileValidator {
     public:
         static std::vector<std::string> loadFilter(const std::string &filterFilePath);
+
+    private:
+        static void deduplicateDomains(std::vector<std::string> &filterDomainList);
     }; // FilterFileLoader
 } // FilteringDNSResolver::Filter
 
