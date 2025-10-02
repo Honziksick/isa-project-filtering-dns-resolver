@@ -26,10 +26,10 @@
 #include <string>       // std::string
 #include <cctype>       // std::isalnum()
 
-using namespace FilteringDNSResolver::Exceptions;
+using namespace FilteringDnsResolver::Exceptions;
 using namespace std;
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     void FilterFileValidator::validateLine(const string_view line) {
         // Validate overall domain length and allowed characters
@@ -126,6 +126,6 @@ namespace FilteringDNSResolver::Filter
                     );
         }
     } // FilterFileValidator::validateLabelFormat
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 /*** end of file FilterFileValidator.cpp ***/

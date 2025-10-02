@@ -26,11 +26,11 @@
 #include <string>   // std::string
 #include <utility>  // std::move
 
-using namespace FilteringDNSResolver::Constants;
-using namespace FilteringDNSResolver::Enums;
+using namespace FilteringDnsResolver::Constants;
+using namespace FilteringDnsResolver::Enums;
 using namespace std;
 
-namespace FilteringDNSResolver::Exceptions
+namespace FilteringDnsResolver::Exceptions
 {
     HelpRequestedException::HelpRequestedException() noexcept
         : BaseCustomException{
@@ -94,6 +94,6 @@ namespace FilteringDNSResolver::Exceptions
             ExceptionMessages::USER_INTERRUPTION_MSG,
             move(detail)
         } {}
-} // FilteringDNSResolver::Exceptions
+} // FilteringDnsResolver::Exceptions
 
 /*** end of file CustomExceptions.cpp ***/

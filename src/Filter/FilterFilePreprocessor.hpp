@@ -25,7 +25,7 @@
 #include <string_view>  // std::string_view
 #include <string>       // std::string
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     class FilterFilePreprocessor {
     protected:
@@ -42,7 +42,7 @@ namespace FilteringDNSResolver::Filter
 
         static bool isCommentLine(std::string_view line) noexcept;
     }; // FilterFilePreprocessor
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 #endif // FILTER_FILE_PREPROCESSOR_HPP
 

@@ -27,12 +27,12 @@
 #include <netdb.h>  // addrinfo, sockaddr_in, freeaddrinfo()
 #include <cstring>  // memcpy
 
-using namespace FilteringDNSResolver::Arguments;
-using namespace FilteringDNSResolver::Exceptions;
-using namespace FilteringDNSResolver::Constants;
+using namespace FilteringDnsResolver::Arguments;
+using namespace FilteringDnsResolver::Exceptions;
+using namespace FilteringDnsResolver::Constants;
 using namespace std;
 
-namespace FilteringDNSResolver::Configurators
+namespace FilteringDnsResolver::Configurators
 {
     sockaddr_in ResolverSetup::setupResolver(const string &resolverHostname) {
         logger("Starting resolver setup");
@@ -62,6 +62,6 @@ namespace FilteringDNSResolver::Configurators
 
         return resolverAddress;
     } // ResolverSetup::setupResolver
-} // FilteringDNSResolver::Configurators
+} // FilteringDnsResolver::Configurators
 
 /*** end of file ResolverSetup.cpp ***/

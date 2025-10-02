@@ -24,7 +24,7 @@
 #ifndef EXCEPTION_MESSAGES_HPP
 #define EXCEPTION_MESSAGES_HPP
 
-namespace FilteringDNSResolver::Constants
+namespace FilteringDnsResolver::Constants
 {
     /**
      * @class ExceptionMessages
@@ -78,7 +78,7 @@ namespace FilteringDNSResolver::Constants
          */
         static constexpr auto USER_INTERRUPTION_MSG = "Operation was interrupted by SIGINT signal (i.e., CTRL+C).";
     }; // ExceptionMessages
-} // FilteringDNSResolver::Constants
+} // FilteringDnsResolver::Constants
 
 #endif // EXCEPTION_MESSAGES_HPP
 

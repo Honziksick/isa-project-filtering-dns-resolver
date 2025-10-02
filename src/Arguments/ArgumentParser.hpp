@@ -35,7 +35,7 @@
  */
 #include "Arguments/CLI11.hpp"
 
-namespace FilteringDNSResolver::Arguments
+namespace FilteringDnsResolver::Arguments
 {
     /**
      * @class ArgumentParser
@@ -63,7 +63,7 @@ namespace FilteringDNSResolver::Arguments
          */
         static void setupCliApp(CLI::App &app, CommandLineOptions &commandLineOptions);
     }; // ArgumentParser
-} // FilteringDNSResolver::Arguments
+} // FilteringDnsResolver::Arguments
 
 #endif // COMMAND_LINE_PARSER_HPP
 

@@ -37,12 +37,12 @@
  */
 #include "Arguments/CLI11.hpp"
 
-using namespace FilteringDNSResolver::Enums;
-using namespace FilteringDNSResolver::Constants;
-using namespace FilteringDNSResolver::Exceptions;
+using namespace FilteringDnsResolver::Enums;
+using namespace FilteringDnsResolver::Constants;
+using namespace FilteringDnsResolver::Exceptions;
 using namespace std;
 
-namespace FilteringDNSResolver::Arguments
+namespace FilteringDnsResolver::Arguments
 {
     CommandLineOptions ArgumentParser::parseArguments(const int argc, char *argv[]) {
         logger("Starting to parse arguments, argc: %d", argc);
@@ -139,6 +139,6 @@ namespace FilteringDNSResolver::Arguments
                 "  110 – Timeout (if used during startup)\n"
                 );
     } // ArgumentParser::setupCliApp
-} // FilteringDNSResolver::Arguments
+} // FilteringDnsResolver::Arguments
 
 /*** end of file ArgumentParser.cpp ***/

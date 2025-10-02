@@ -32,7 +32,7 @@
 #include <memory>
 #include <string>
 
-namespace FilteringDNSResolver::Facades
+namespace FilteringDnsResolver::Facades
 {
     /**
      * @class MainAppFacade
@@ -77,7 +77,7 @@ namespace FilteringDNSResolver::Facades
 
         void setupUdpSockets(uint16_t listenerPort);
     }; // MainAppFacade
-} // FilteringDNSResolver::Facades
+} // FilteringDnsResolver::Facades
 
 #endif // MAIN_APP_FACADE_HPP
 

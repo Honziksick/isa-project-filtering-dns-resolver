@@ -28,7 +28,7 @@
 #include <exception> // std::exception
 #include <string>    // std::string
 
-namespace FilteringDNSResolver::Exceptions
+namespace FilteringDnsResolver::Exceptions
 {
     /**
      * @class BaseCustomException
@@ -70,7 +70,7 @@ namespace FilteringDNSResolver::Exceptions
         const std::string mMessage;    /**< The error message. */
         std::string mDetail;           /**< Additional details about the error. */
     }; // BaseCustomException
-} // FilteringDNSResolver::Exceptions
+} // FilteringDnsResolver::Exceptions
 
 #endif // BASE_CUSTOM_EXCEPTION_HPP
 

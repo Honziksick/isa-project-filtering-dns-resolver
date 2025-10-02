@@ -26,11 +26,11 @@
 #include <string>   // std::string
 #include <utility>  // std::move
 
-using namespace FilteringDNSResolver::Enums;
-using namespace FilteringDNSResolver::Utilities;
+using namespace FilteringDnsResolver::Enums;
+using namespace FilteringDnsResolver::Utilities;
 using namespace std;
 
-namespace FilteringDNSResolver::Exceptions
+namespace FilteringDnsResolver::Exceptions
 {
     BaseCustomException::BaseCustomException(const ExitCodes code, string message,
                                              string detail) noexcept
@@ -49,6 +49,6 @@ namespace FilteringDNSResolver::Exceptions
     string BaseCustomException::detail() const noexcept {
         return mDetail;
     } // BaseCustomException::detail()
-} // FilteringDNSResolver::Exceptions
+} // FilteringDnsResolver::Exceptions
 
 /*** end of file BaseCustomException.cpp ***/

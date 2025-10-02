@@ -34,14 +34,14 @@
 #include <string>     // std::string
 #include <memory>     // std::make_unique
 
-using namespace FilteringDNSResolver::Arguments;
-using namespace FilteringDNSResolver::Configurators;
-using namespace FilteringDNSResolver::Filter;
-using namespace FilteringDNSResolver::Networking;
-using namespace FilteringDNSResolver::Utilities;
+using namespace FilteringDnsResolver::Arguments;
+using namespace FilteringDnsResolver::Configurators;
+using namespace FilteringDnsResolver::Filter;
+using namespace FilteringDnsResolver::Networking;
+using namespace FilteringDnsResolver::Utilities;
 using namespace std;
 
-namespace FilteringDNSResolver::Facades
+namespace FilteringDnsResolver::Facades
 {
     void MainAppFacade::runResolver(const int argc, char *argv[]) {
         try {
@@ -87,6 +87,6 @@ namespace FilteringDNSResolver::Facades
         mUdpSockets = UdpSockets::openUdpSockets(listenerPort);
         logger("UDP sockets set up successfully");
     } // MainAppFacade::setupUdpSockets()
-} // FilteringDNSResolver::Facades
+} // FilteringDnsResolver::Facades
 
 /*** end of file MainAppFacade.cpp ***/

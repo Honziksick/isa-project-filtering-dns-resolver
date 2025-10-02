@@ -26,7 +26,7 @@
 #include "Exceptions/BaseCustomException.hpp"
 #include <string>  // std::string
 
-namespace FilteringDNSResolver::Exceptions
+namespace FilteringDnsResolver::Exceptions
 {
     /**
      * @class HelpRequestedException
@@ -153,7 +153,7 @@ namespace FilteringDNSResolver::Exceptions
          */
         explicit UserInterruptionException(std::string detail = "") noexcept;
     }; // UserInterruptionException
-} // FilteringDNSResolver::Exceptions
+} // FilteringDnsResolver::Exceptions
 
 #endif // CUSTOM_EXCEPTIONS_HPP
 

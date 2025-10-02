@@ -25,7 +25,7 @@
 #ifndef COLOR_ESCAPE_SEQUENCES_HPP
 #define COLOR_ESCAPE_SEQUENCES_HPP
 
-namespace FilteringDNSResolver::Constants
+namespace FilteringDnsResolver::Constants
 {
     /**
      * @class Color
@@ -45,7 +45,7 @@ namespace FilteringDNSResolver::Constants
         static constexpr auto MAGENTA = "\033[35m";  /**< Magenta text color. */
         static constexpr auto CYAN = "\033[36m";     /**< Cyan text color.    */
     }; // Color
-} // FilteringDNSResolver::Constants
+} // FilteringDnsResolver::Constants
 
 #endif // COLOR_ESCAPE_SEQUENCES_HPP
 

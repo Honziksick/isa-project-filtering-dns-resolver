@@ -25,7 +25,7 @@
 
 #include <cstdint>  // uint16_t
 
-namespace FilteringDNSResolver::Constants
+namespace FilteringDnsResolver::Constants
 {
     /**
      * @class DefaultOptions
@@ -37,7 +37,7 @@ namespace FilteringDNSResolver::Constants
         static constexpr uint16_t DEFAULT_LISTENER_PORT = 53;  /**< Default local listening port number.  */
         static constexpr uint16_t DEFAULT_RESOLVER_PORT = 53;  /**< Default DNS resolver port number.     */
     }; // DefaultCliOptions
-} // FilteringDNSResolver::Constants
+} // FilteringDnsResolver::Constants
 
 #endif // DEFAULT_OPTIONS_HPP
 

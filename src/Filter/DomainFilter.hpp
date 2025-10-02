@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     class DomainFilter {
     public:
@@ -53,7 +53,7 @@ namespace FilteringDNSResolver::Filter
 
         static constexpr auto DOT{'.'};
     }; // DomainFilter
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 #endif // DOMAIN_FILTER_HPP
 

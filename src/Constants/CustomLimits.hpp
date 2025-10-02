@@ -26,7 +26,7 @@
 
 #include <cstdint>  // uint16_t
 
-namespace FilteringDNSResolver::Constants
+namespace FilteringDnsResolver::Constants
 {
     /**
      * @class CustomLimits
@@ -53,7 +53,7 @@ namespace FilteringDNSResolver::Constants
          */
         static constexpr uint16_t MAX_TX_ID16 = std::numeric_limits<uint16_t>::max();
     }; // CustomLimits
-} // FilteringDNSResolver::Constants
+} // FilteringDnsResolver::Constants
 
 #endif // CUSTOM_LIMITS_HPP
 

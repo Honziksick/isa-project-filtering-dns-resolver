@@ -26,13 +26,13 @@
 #include <netdb.h>  // sockaddr_in
 #include <string>
 
-namespace FilteringDNSResolver::Configurators
+namespace FilteringDnsResolver::Configurators
 {
     class ResolverSetup final : HostnameResolver {
     public:
         static sockaddr_in setupResolver(const std::string& resolverHostname);
     }; // ResolverSetup
-} // FilteringDNSResolver::Configurators
+} // FilteringDnsResolver::Configurators
 
 #endif // RESOLVER_SETUP_HPP
 

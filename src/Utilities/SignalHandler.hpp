@@ -27,7 +27,7 @@
 
 #include <atomic>  // std::atomic
 
-namespace FilteringDNSResolver::Utilities
+namespace FilteringDnsResolver::Utilities
 {
     /**
      * @class SignalHandler
@@ -66,7 +66,7 @@ namespace FilteringDNSResolver::Utilities
 
         static std::atomic<bool> mSigintReceived;  /**< Atomic flag for SIGINT signal. */
     }; // SignalHandler
-} // FilteringDNSResolver::Utilities
+} // FilteringDnsResolver::Utilities
 
 #endif // SIGNAL_HANDLER_HPP
 

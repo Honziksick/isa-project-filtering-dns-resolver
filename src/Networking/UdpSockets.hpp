@@ -23,7 +23,7 @@
 #define UDP_SOCKETS_HPP
 #include <bits/stdint-uintn.h>
 
-namespace FilteringDNSResolver::Networking
+namespace FilteringDnsResolver::Networking
 {
     class UdpSockets final {
     public:
@@ -59,7 +59,7 @@ namespace FilteringDNSResolver::Networking
         int mResolverSocketFd{INVALID_FD};
         int mListenerSocketFd{INVALID_FD};
     }; // UDPSocket
-} // FilteringDNSResolver::Networking
+} // FilteringDnsResolver::Networking
 
 #endif // UDP_SOCKETS_HPP
 

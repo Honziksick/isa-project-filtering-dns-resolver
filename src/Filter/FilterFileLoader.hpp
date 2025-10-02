@@ -27,7 +27,7 @@
 #include <string>  // std::string
 #include <vector>  // std::vector
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     class FilterFileLoader final : FilterFilePreprocessor, FilterFileValidator {
     public:
@@ -36,7 +36,7 @@ namespace FilteringDNSResolver::Filter
     private:
         static void deduplicateDomains(std::vector<std::string> &filterDomainList);
     }; // FilterFileLoader
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 #endif // FILTER_FILE_LOADER_HPP
 

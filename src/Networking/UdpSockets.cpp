@@ -24,10 +24,10 @@
 #include <string>        // std::string
 #include <cerrno>        // errno()
 
-using namespace FilteringDNSResolver::Exceptions;
+using namespace FilteringDnsResolver::Exceptions;
 using namespace std;
 
-namespace FilteringDNSResolver::Networking
+namespace FilteringDnsResolver::Networking
 {
     UdpSockets::UdpSockets(const int resolverSocketFd, const int listenerSocketFd)
         : mResolverSocketFd{resolverSocketFd},
@@ -136,6 +136,6 @@ namespace FilteringDNSResolver::Networking
             mListenerSocketFd = INVALID_FD;
         }
     } // UdpSockets::closeListenerSocket
-} // FilteringDNSResolver::Networking
+} // FilteringDnsResolver::Networking
 
 /*** end of file UdpSockets.cpp ***/

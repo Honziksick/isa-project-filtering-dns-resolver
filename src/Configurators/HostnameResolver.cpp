@@ -31,11 +31,11 @@
 #include <cstring>       // std::memset
 #include <string>        // std::string
 
-using namespace FilteringDNSResolver::Exceptions;
-using namespace FilteringDNSResolver::Constants;
+using namespace FilteringDnsResolver::Exceptions;
+using namespace FilteringDnsResolver::Constants;
 using namespace std;
 
-namespace FilteringDNSResolver::Configurators
+namespace FilteringDnsResolver::Configurators
 {
     addrinfo *HostnameResolver::resolveHostname(const string &hostname) {
         logger("Starting hostname resolution for hostname: '%s'", hostname.c_str());
@@ -76,6 +76,6 @@ namespace FilteringDNSResolver::Configurators
         logger("Hostname resolution successful. Returning addrinfo structure.");
         return pResult;
     } // HostnameResolver::resolveHostname()
-} // FilteringDNSResolver::Utilities
+} // FilteringDnsResolver::Utilities
 
 /*** end of file HostnameResolver.cpp ***/

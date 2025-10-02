@@ -33,12 +33,12 @@
 #include <iostream>   // std::cerr
 #include <string>     // std::string
 
-using namespace FilteringDNSResolver::Enums;
-using namespace FilteringDNSResolver::Exceptions;
-using namespace FilteringDNSResolver::Constants;
+using namespace FilteringDnsResolver::Enums;
+using namespace FilteringDnsResolver::Exceptions;
+using namespace FilteringDnsResolver::Constants;
 using namespace std;
 
-namespace FilteringDNSResolver::Utilities
+namespace FilteringDnsResolver::Utilities
 {
     void ExceptionHandler::handleError(const exception &exception, const bool terminate) {
         logger("Handling error: %s", exception.what());
@@ -82,6 +82,6 @@ namespace FilteringDNSResolver::Utilities
         logger("Getting BaseCustomException from exception: %s", exception.what());
         return dynamic_cast<const BaseCustomException*>(&exception);
     } // ExceptionHandler::getCustomException()
-} // FilteringDNSResolver::Exceptions
+} // FilteringDnsResolver::Exceptions
 
 /*** end of file ExceptionHandler.cpp ***/

@@ -29,7 +29,7 @@
 #include "Exceptions/BaseCustomException.hpp"
 #include <exception>  // std::exception
 
-namespace FilteringDNSResolver::Utilities
+namespace FilteringDnsResolver::Utilities
 {
     /**
      * @class ExceptionHandler
@@ -84,7 +84,7 @@ namespace FilteringDNSResolver::Utilities
          */
         static const Exceptions::BaseCustomException *getCustomException(const std::exception &exception);
     }; // ExceptionHandler
-} // FilteringDNSResolver::Utilities
+} // FilteringDnsResolver::Utilities
 
 #endif // EXCEPTION_HANDLER_HPP
 

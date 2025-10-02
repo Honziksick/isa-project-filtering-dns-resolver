@@ -28,10 +28,10 @@
 #include <atomic>   // std::atomic
 #include <csignal>  // signal
 
-using namespace FilteringDNSResolver::Enums;
-using namespace FilteringDNSResolver::Exceptions;
+using namespace FilteringDnsResolver::Enums;
+using namespace FilteringDnsResolver::Exceptions;
 
-namespace FilteringDNSResolver::Utilities
+namespace FilteringDnsResolver::Utilities
 {
     // Initialization of the static atomic flags
     std::atomic<bool> SignalHandler::mSigintReceived{false};
@@ -59,6 +59,6 @@ namespace FilteringDNSResolver::Utilities
             throw UserInterruptionException("Signal SIGINT received.");
         }
     } // SignalHandler::checkSignals
-} // FilteringDNSResolver::Utilities
+} // FilteringDnsResolver::Utilities
 
 /*** end of file SignalHandler.cpp ***/

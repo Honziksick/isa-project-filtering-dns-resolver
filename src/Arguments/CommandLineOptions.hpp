@@ -28,7 +28,7 @@
 #include <string>   // std::string
 #include <cstdint>  // uint8_t, uint16_t
 
-namespace FilteringDNSResolver::Arguments
+namespace FilteringDnsResolver::Arguments
 {
     /**
      * @class CommandLineOptions
@@ -54,7 +54,7 @@ namespace FilteringDNSResolver::Arguments
          */
         bool operator==(const CommandLineOptions &other) const = default;
     }; // CommandLineOptions
-} // FilteringDNSResolver::Arguments
+} // FilteringDnsResolver::Arguments
 
 #endif // COMMAND_LINE_OPTIONS_HPP
 

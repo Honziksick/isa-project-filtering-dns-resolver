@@ -33,7 +33,7 @@
 #include <type_traits>  // std::is_enum_v, std::is_integral_v, std::is_same_v
 #include <cstdint>      // uint8_t, uint16_t
 
-namespace FilteringDNSResolver::Utilities
+namespace FilteringDnsResolver::Utilities
 {
     /**
      * @class CastUtils
@@ -232,7 +232,7 @@ namespace FilteringDNSResolver::Utilities
             return EnumType::ANY;
         } // CastUtils::castStringToEnum
     }; // CastUtils
-} // FilteringDNSResolver::Utilities
+} // FilteringDnsResolver::Utilities
 
 #endif // CAST_UTILS_HPP
 

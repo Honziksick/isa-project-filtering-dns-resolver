@@ -28,7 +28,7 @@
 #include <string>   // std::string
 #include <netdb.h>  // addrinfo
 
-namespace FilteringDNSResolver::Configurators
+namespace FilteringDnsResolver::Configurators
 {
     /**
      * @class HostnameResolver
@@ -53,7 +53,7 @@ namespace FilteringDNSResolver::Configurators
          */
         static addrinfo *resolveHostname(const std::string &hostname);
     }; // HostnameResolver
-} // FilteringDNSResolver::Configurators
+} // FilteringDnsResolver::Configurators
 
 #endif // HOSTNAME_RESOLVER_HPP
 

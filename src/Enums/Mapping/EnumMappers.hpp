@@ -30,7 +30,7 @@
 #include <unordered_map>  // std::unordered_map
 #include <string>         // std::string
 
-namespace FilteringDNSResolver::Enums::Mapping
+namespace FilteringDnsResolver::Enums::Mapping
 {
     /**
      * @class EnumMappers
@@ -71,7 +71,7 @@ namespace FilteringDNSResolver::Enums::Mapping
     inline const std::unordered_map<ExitCodes, std::string> &EnumMappers::getEnumToStringMap<ExitCodes>() {
         return getExitCodesMap();
     }
-} // FilteringDNSResolver::Enums::Mapping
+} // FilteringDnsResolver::Enums::Mapping
 
 #endif // ENUM_MAPPERS_HPP
 

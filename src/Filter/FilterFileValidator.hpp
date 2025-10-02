@@ -24,7 +24,7 @@
 
 #include <string_view>  // std::string_view
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     class FilterFileValidator {
     protected:
@@ -39,7 +39,7 @@ namespace FilteringDNSResolver::Filter
 
         static constexpr auto DOT{'.'};
     }; // FilterFileValidator
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 #endif // FILTER_FILE_VALIDATOR_HPP
 

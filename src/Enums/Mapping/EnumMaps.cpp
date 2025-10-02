@@ -29,7 +29,7 @@
 
 using namespace std;
 
-namespace FilteringDNSResolver::Enums::Mapping
+namespace FilteringDnsResolver::Enums::Mapping
 {
     const unordered_map<ExitCodes, string> &EnumMaps::getExitCodesMap() {
         static const unordered_map<ExitCodes, string> cMap = {
@@ -45,6 +45,6 @@ namespace FilteringDNSResolver::Enums::Mapping
         };
         return cMap;
     } // EnumMaps::getExitCodesMap
-} // FilteringDNSResolver::Enums::Mapping
+} // FilteringDnsResolver::Enums::Mapping
 
 /*** end of file EnumMaps.cpp ***/

@@ -28,7 +28,7 @@
 #include <unordered_map>  // std::unordered_map
 #include <string>         // std::string
 
-namespace FilteringDNSResolver::Enums::Mapping
+namespace FilteringDnsResolver::Enums::Mapping
 {
     /**
      * @class EnumMaps
@@ -50,7 +50,7 @@ namespace FilteringDNSResolver::Enums::Mapping
          */
         static const std::unordered_map<ExitCodes, std::string> &getExitCodesMap();
     }; // EnumMaps
-} // FilteringDNSResolver::Enums::Mapping
+} // FilteringDnsResolver::Enums::Mapping
 
 #endif // ENUM_MAPS_HPP
 

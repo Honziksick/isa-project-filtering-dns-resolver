@@ -31,10 +31,10 @@
 #include <vector>     // std::vector
 #include <string>     // std::string
 
-using namespace FilteringDNSResolver::Exceptions;
+using namespace FilteringDnsResolver::Exceptions;
 using namespace std;
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     vector<string> FilterFileLoader::loadFilter(const string &filterFilePath) {
         logger("Loading filter file lines: '%s'", filterFilePath.c_str());
@@ -70,6 +70,6 @@ namespace FilteringDNSResolver::Filter
         ranges::sort(filterDomainList);
         filterDomainList.erase(ranges::unique(filterDomainList).begin(), filterDomainList.end());
     } // FilterFileLoader::deduplicateDomains()
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 /*** end of file FilterFileLoader.cpp ***/

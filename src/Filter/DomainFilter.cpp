@@ -25,7 +25,7 @@
 
 using namespace std;
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     DomainFilter::DomainFilter(vector<string> filterFileContent) {
         for(auto &domainName : filterFileContent) {
@@ -52,6 +52,6 @@ namespace FilteringDNSResolver::Filter
         // No match found
         return false;
     } // DomainFilter::domainMatches
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 /*** end of file DomainFilter.cpp ***/

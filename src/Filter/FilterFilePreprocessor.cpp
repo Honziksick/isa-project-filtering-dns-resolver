@@ -29,7 +29,7 @@
 
 using namespace std;
 
-namespace FilteringDNSResolver::Filter
+namespace FilteringDnsResolver::Filter
 {
     bool FilterFilePreprocessor::preprocessLine(string &line) noexcept {
         trimWhitespace(line);
@@ -87,6 +87,6 @@ namespace FilteringDNSResolver::Filter
     bool FilterFilePreprocessor::isCommentLine(const string_view line) noexcept {
         return line.front() == '#';
     } // FilterFilePreprocessor::isCommentLine()
-} // FilteringDNSResolver::Filter
+} // FilteringDnsResolver::Filter
 
 /*** end of file FilterFilePreprocessor.cpp ***/

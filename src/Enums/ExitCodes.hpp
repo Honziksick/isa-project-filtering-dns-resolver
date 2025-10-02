@@ -24,7 +24,7 @@
 #ifndef EXIT_CODES_HPP
 #define EXIT_CODES_HPP
 
-namespace FilteringDNSResolver::Enums
+namespace FilteringDnsResolver::Enums
 {
     /**
      * @enum ExitCodes
@@ -47,7 +47,7 @@ namespace FilteringDNSResolver::Enums
         USER_INTERRUPTION_ERROR           = 130    /**< Process interrupted by user error code (128 + SIGINT).            */
     }; // ExitCodes
 
-} // FilteringDNSResolver::Enums
+} // FilteringDnsResolver::Enums
 
 #endif // EXIT_CODES_HPP
 

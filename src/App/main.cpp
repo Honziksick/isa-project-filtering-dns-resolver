@@ -27,7 +27,7 @@
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception
 
-using namespace FilteringDNSResolver;
+using namespace FilteringDnsResolver;
 using namespace std;
 
 int main(const int argc, char *argv[]) {

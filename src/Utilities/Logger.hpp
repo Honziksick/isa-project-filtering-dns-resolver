@@ -39,7 +39,7 @@
 // Define DEBUG_PRINT to enable debug printing
 #define DEBUG_PRINT
 
-namespace FilteringDNSResolver::Utilities
+namespace FilteringDnsResolver::Utilities
 {
     /**
      * @class Logger
@@ -102,7 +102,7 @@ namespace FilteringDNSResolver::Utilities
             }
         } // Logger::log()
     }; // Logger
-} // FilteringDNSResolver::Utilities
+} // FilteringDnsResolver::Utilities
 
 /**
  * @def logger(format, ...)
@@ -121,7 +121,7 @@ namespace FilteringDNSResolver::Utilities
  */
 #ifdef DEBUG_PRINT
 #define logger(format, ...) \
-FilteringDNSResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, format, FilteringDNSResolver::Constants::Color::MAGENTA, ##__VA_ARGS__)
+FilteringDnsResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, format, FilteringDnsResolver::Constants::Color::MAGENTA, ##__VA_ARGS__)
 #else
 #define logger(format, ...) (0)
 #endif // DEBUG_PRINT
