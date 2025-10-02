@@ -27,6 +27,7 @@
 
 #include "Arguments/CommandLineOptions.hpp"
 #include "Filter/DomainFilter.hpp"
+#include "Networking/UDPSockets.hpp"
 #include <netdb.h>  // sockaddr_in
 #include <memory>
 #include <string>
@@ -60,6 +61,7 @@ namespace FilteringDNSResolver::Facades
         Arguments::CommandLineOptions mCommandLineOptions{};   /**< Parsed command line options. */
         std::unique_ptr<Filter::DomainFilter> mDomainFilterPtr{nullptr};          /**< Pointer to the domain filter instance. */
         sockaddr_in mResolverAddress{};                        /**< Resolved upstream DNS server address info. */
+        Networking::UdpSockets mUdpSockets{};                     /**< UDP sockets for communication. */
 
         /**
          * @brief Initializes command line options by parsing the input arguments.
@@ -72,6 +74,8 @@ namespace FilteringDNSResolver::Facades
         void getResolverAddress(const std::string &resolverHostname);
 
         void buildDomainFilter(const std::string &filterFilePath);
+
+        void setupUdpSockets(uint16_t listenerPort);
     }; // MainAppFacade
 } // FilteringDNSResolver::Facades
 

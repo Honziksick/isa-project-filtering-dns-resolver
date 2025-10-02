@@ -7,10 +7,10 @@
  * File:         MainAppFacade.cpp                                             *
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
- * Created:      20.03.2025                                                    *
- * Last edit:    22.03.2025                                                    *
+ * Created:      28.09.2025                                                    *
+ * Last edit:    02.10.2025                                                    *
  *                                                                             *
- * Description:  This file contains the implementation of the `MainAppFacade`  *
+ * Description: This file contains the implementation of the `MainAppFacade`   *
  *              class, which serves as a facade for the Filtering DNS Resolver *
  *              application. The facade pattern is used to provide a           *
  *              simplified interface to a complex subsystem.                   *
@@ -27,16 +27,17 @@
 #include "Configurators/ResolverSetup.hpp"
 #include "Filter/FilterFileLoader.hpp"
 #include "Filter/DomainFilter.hpp"
+#include "Networking/UDPSockets.hpp"
 #include "Utilities/ExceptionHandler.hpp"
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception
+#include <string>     // std::string
 #include <memory>     // std::make_unique
-#include <string>
-#include <vector>
 
 using namespace FilteringDNSResolver::Arguments;
 using namespace FilteringDNSResolver::Configurators;
 using namespace FilteringDNSResolver::Filter;
+using namespace FilteringDNSResolver::Networking;
 using namespace FilteringDNSResolver::Utilities;
 using namespace std;
 
@@ -52,6 +53,9 @@ namespace FilteringDNSResolver::Facades
 
             // Next we resolve the upstream DNS server address
             getResolverAddress(mCommandLineOptions.mResolverHostname);
+
+            // Then we set up UDP sockets for listening and sending DNS queries
+            setupUdpSockets(mCommandLineOptions.mListenPort);
 
             // TODO
         }
@@ -77,6 +81,12 @@ namespace FilteringDNSResolver::Facades
         mDomainFilterPtr = make_unique<DomainFilter>(FilterFileLoader::loadFilter(filterFilePath));
         logger("Domain filter built successfully");
     } // MainAppFacade::buildDomainFilter()
+
+    void MainAppFacade::setupUdpSockets(const uint16_t listenerPort) {
+        logger("Setting up UDP sockets...");
+        mUdpSockets = UdpSockets::openUdpSockets(listenerPort);
+        logger("UDP sockets set up successfully");
+    } // MainAppFacade::setupUdpSockets()
 } // FilteringDNSResolver::Facades
 
 /*** end of file MainAppFacade.cpp ***/
