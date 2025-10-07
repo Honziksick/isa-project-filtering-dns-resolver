@@ -23,6 +23,7 @@
 #include "Exceptions/CustomExceptions.hpp"
 #include "Constants/ExceptionMessages.hpp"
 #include "Enums/ExitCodes.hpp"
+#include "Enums/DnsRCodes.hpp"
 #include <string>   // std::string
 #include <utility>  // std::move
 
@@ -53,7 +54,7 @@ namespace FilteringDnsResolver::Exceptions
             move(detail)
         } {}
 
-    UknownErrorException::UknownErrorException(string detail) noexcept
+    UnknownErrorException::UnknownErrorException(string detail) noexcept
         : BaseCustomException{
             ExitCodes::UNKNOWN_ERROR,
             ExceptionMessages::UNKNOWN_ERROR_MSG,
@@ -71,6 +72,20 @@ namespace FilteringDnsResolver::Exceptions
         : BaseCustomException{
             ExitCodes::SOCKET_ERROR,
             ExceptionMessages::SOCKET_ERROR_MSG,
+            move(detail)
+        } {}
+
+    DnsParseErrorException::DnsParseErrorException(const DnsRCodes code, string detail) noexcept
+    : BaseCustomException{
+        code,
+        string{},
+        move(detail)
+    } {}
+
+    ConnectionErrorException::ConnectionErrorException(string detail) noexcept
+        : BaseCustomException{
+            ExitCodes::CONNECTION_ERROR,
+            ExceptionMessages::CONNECTION_ERROR_MSG,
             move(detail)
         } {}
 

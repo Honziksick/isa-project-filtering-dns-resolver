@@ -43,6 +43,7 @@ namespace FilteringDnsResolver::Enums
         UNKNOWN_ERROR                     = 42,    /**< Unknown error (The Answer to Life, the Universe, and Everything). */
         PROTOCOL_ERROR                    = 71,    /**< Protocol error (EPROTO).                                          */
         SOCKET_ERROR                      = 107,   /**< Socket error code (ENOTCONN).                                     */
+        CONNECTION_ERROR                  = 111,   /**< Connection error code (ECONNREFUSED).                             */
         HOSTNAME_RESOLUTION_ERROR         = 113,   /**< Hostname resolution error code (EHOSTUNREACH).                    */
         USER_INTERRUPTION_ERROR           = 130    /**< Process interrupted by user error code (128 + SIGINT).            */
     }; // ExitCodes

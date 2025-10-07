@@ -44,14 +44,14 @@ namespace FilteringDnsResolver::Utilities
         logger("Handling error: %s", exception.what());
 
         // Attempt to cast the original exception to BaseCustomException
-        const BaseCustomException *pCustomException = getCustomException(exception);
+        const BaseCustomException<ExitCodes> *pCustomException = getCustomException(exception);
 
         // Create an UnknownErrorException (only used if 'dynamic_cast' above failed)
-        const UknownErrorException unknownException{exception.what()};
+        const UnknownErrorException unknownException{exception.what()};
 
         // If 'dynamic_cast' above failed, use the address of UnknownException
         if(!pCustomException) {
-            logger("Unknown exception type, using UknownErrorException");
+            logger("Unknown exception type, using UnknownErrorException");
             pCustomException = &unknownException;
         }
 
@@ -66,7 +66,7 @@ namespace FilteringDnsResolver::Utilities
         }
     } // ExceptionHandler::handleError()
 
-    void ExceptionHandler::printError(const BaseCustomException &exception) {
+    void ExceptionHandler::printError(const BaseCustomException<ExitCodes> &exception) {
         cerr << Color::RED << "Error " << exception.code() << ": " << exception.what() << Color::RESET << endl;
         if(!exception.detail().empty()) {
             cerr << Color::YELLOW << "Detail: " << exception.detail() << Color::RESET << endl;
@@ -78,9 +78,9 @@ namespace FilteringDnsResolver::Utilities
         exit(errorCode);
     } // ExceptionHandler::terminateProgram()
 
-    const BaseCustomException *ExceptionHandler::getCustomException(const exception &exception) {
+    const BaseCustomException<ExitCodes> *ExceptionHandler::getCustomException(const exception &exception) {
         logger("Getting BaseCustomException from exception: %s", exception.what());
-        return dynamic_cast<const BaseCustomException*>(&exception);
+        return dynamic_cast<const BaseCustomException<ExitCodes>*>(&exception);
     } // ExceptionHandler::getCustomException()
 } // FilteringDnsResolver::Exceptions
 

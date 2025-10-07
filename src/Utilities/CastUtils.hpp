@@ -28,10 +28,10 @@
 #include "Enums/Mapping/EnumMappers.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Utilities/Logger.hpp"
-#include <string>       // std::string
-#include <vector>       // std::vector
 #include <type_traits>  // std::is_enum_v, std::is_integral_v, std::is_same_v
 #include <cstdint>      // uint8_t, uint16_t
+#include <string>       // std::string
+#include <vector>       // std::vector
 
 namespace FilteringDnsResolver::Utilities
 {
@@ -59,7 +59,6 @@ namespace FilteringDnsResolver::Utilities
             static_assert(std::is_integral_v<IntegerType>, "Template parameter must be an integral type");
             return static_cast<size_t>(integerValue);
         } // CastUtils::castIntToSizeT
-
 
         /**
          * @brief Combines two consecutive bytes from a vector into a 16-bit word.

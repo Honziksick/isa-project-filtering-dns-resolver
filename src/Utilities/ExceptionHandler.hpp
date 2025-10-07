@@ -27,6 +27,7 @@
 #define EXCEPTION_HANDLER_HPP
 
 #include "Exceptions/BaseCustomException.hpp"
+#include "Enums/ExitCodes.hpp"
 #include <exception>  // std::exception
 
 namespace FilteringDnsResolver::Utilities
@@ -62,7 +63,7 @@ namespace FilteringDnsResolver::Utilities
          * @brief Prints the given error message.
          * @param exception The exception containing the error message to print.
          */
-        static void printError(const Exceptions::BaseCustomException &exception);
+        static void printError(const Exceptions::BaseCustomException<Enums::ExitCodes> &exception);
 
         /**
          * @brief Terminates the program with the given error code.
@@ -82,7 +83,7 @@ namespace FilteringDnsResolver::Utilities
          * @return Pointer to the BaseCustomException if cast is successful,
          *         nullptr otherwise.
          */
-        static const Exceptions::BaseCustomException *getCustomException(const std::exception &exception);
+        static const Exceptions::BaseCustomException<Enums::ExitCodes> *getCustomException(const std::exception &exception);
     }; // ExceptionHandler
 } // FilteringDnsResolver::Utilities
 

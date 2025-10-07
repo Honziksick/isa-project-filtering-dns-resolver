@@ -69,6 +69,11 @@ namespace FilteringDnsResolver::Constants
         static constexpr auto SOCKET_ERROR_MSG = "A problem occurred with the socket.";
 
         /**
+         * @brief Error message for connection related error.
+         */
+        static constexpr auto CONNECTION_ERROR_MSG = "A problem occurred with the connection.";
+
+        /**
          * @brief Error message for protocol error.
          */
         static constexpr auto PROTOCOL_ERROR_MSG = "Protocol error occurred.";

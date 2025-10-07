@@ -40,6 +40,7 @@ namespace FilteringDnsResolver::Enums::Mapping
             {ExitCodes::UNKNOWN_ERROR, "Unknown Error"},
             {ExitCodes::PROTOCOL_ERROR, "Protocol Error"},
             {ExitCodes::SOCKET_ERROR, "Socket Error"},
+            {ExitCodes::CONNECTION_ERROR, "Connection Error"},
             {ExitCodes::HOSTNAME_RESOLUTION_ERROR, "Hostname Resolution Error"},
             {ExitCodes::USER_INTERRUPTION_ERROR, "User Interruption Error"}
         };

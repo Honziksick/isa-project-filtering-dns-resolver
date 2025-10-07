@@ -24,6 +24,8 @@
 #define CUSTOM_EXCEPTIONS_HPP
 
 #include "Exceptions/BaseCustomException.hpp"
+#include "Enums/ExitCodes.hpp"
+#include "Enums/DnsRCodes.hpp"
 #include <string>  // std::string
 
 namespace FilteringDnsResolver::Exceptions
@@ -32,7 +34,7 @@ namespace FilteringDnsResolver::Exceptions
      * @class HelpRequestedException
      * @brief Exception class used when user requests help.
      */
-    class HelpRequestedException final : public BaseCustomException {
+    class HelpRequestedException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `HelpRequestedException`.
@@ -44,7 +46,7 @@ namespace FilteringDnsResolver::Exceptions
      * @class InternalErrorException
      * @brief Exception class for internal errors.
      */
-    class InternalErrorException final : public BaseCustomException {
+    class InternalErrorException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `InternalErrorException`.
@@ -59,7 +61,7 @@ namespace FilteringDnsResolver::Exceptions
      * @brief Exception class used when user passes invalid argument to the
      *        program.
      */
-    class InvalidArgumentException final : public BaseCustomException {
+    class InvalidArgumentException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `InvalidArgumentException`.
@@ -70,25 +72,25 @@ namespace FilteringDnsResolver::Exceptions
     }; // InvalidArgumentException
 
     /**
-     * @class UknownErrorException
+     * @class UnknownErrorException
      * @brief Exception class for unknown errors.
      */
-    class UknownErrorException final : public BaseCustomException {
+    class UnknownErrorException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
-         * @brief Constructor for `UknownErrorException`.
+         * @brief Constructor for `UnknownErrorException`.
          *
          * @param detail Additional information about the error.
          */
-        explicit UknownErrorException(std::string detail = "") noexcept;
-    }; // UknownErrorException
+        explicit UnknownErrorException(std::string detail = "") noexcept;
+    }; // UnknownErrorException
 
     /**
      * @class InvalidFilterFileContentException
      * @brief Exception class used when domain in invalid format is detected in
      *        the filter file.
      */
-    class InvalidFilterFileContentException final : public BaseCustomException {
+    class InvalidFilterFileContentException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `InvalidFilterFileContentException`.
@@ -102,7 +104,7 @@ namespace FilteringDnsResolver::Exceptions
      * @class SocketErrorException
      * @brief Exception class for socket related errors.
      */
-    class SocketErrorException final : public BaseCustomException {
+    class SocketErrorException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `SocketErrorException`.
@@ -113,10 +115,39 @@ namespace FilteringDnsResolver::Exceptions
     }; // SocketErrorException
 
     /**
+     * @class DnsParseErrorException
+     * @brief Exception class for DNS parsing errors.
+     */
+    class DnsParseErrorException final : public BaseCustomException<Enums::DnsRCodes> {
+    public:
+        /**
+         * @brief Constructor for `DnsParseErrorException`.
+         *
+         * @param code The DNS RCODE representing the error.
+         * @param detail Additional information about the error.
+         */
+        explicit DnsParseErrorException(Enums::DnsRCodes code, std::string detail = "") noexcept;
+    }; // DnsParseErrorException
+
+    /**
+     * @class ConnectionErrorException
+     * @brief Exception class for connection related errors.
+     */
+    class ConnectionErrorException final : public BaseCustomException<Enums::ExitCodes> {
+    public:
+        /**
+         * @brief Constructor for `ConnectionErrorException`.
+         *
+         * @param detail Additional information about the error.
+         */
+        explicit ConnectionErrorException(std::string detail = "") noexcept;
+    }; // ConnectionErrorException
+
+    /**
      * @class ProtocolErrorException
      * @brief Exception class for protocol errors.
      */
-    class ProtocolErrorException final : public BaseCustomException {
+    class ProtocolErrorException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `ProtocolErrorException`.
@@ -130,7 +161,7 @@ namespace FilteringDnsResolver::Exceptions
      * @class HostnameResolutionErrorException
      * @brief Exception class for hostname resolution errors.
      */
-    class HostnameResolutionErrorException final : public BaseCustomException {
+    class HostnameResolutionErrorException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `HostnameResolutionException`.
@@ -144,7 +175,7 @@ namespace FilteringDnsResolver::Exceptions
      * @class UserInterruptionException
      * @brief Exception class for user interruptions.
      */
-    class UserInterruptionException final : public BaseCustomException {
+    class UserInterruptionException final : public BaseCustomException<Enums::ExitCodes> {
     public:
         /**
          * @brief Constructor for `UserInterruptionException`.
