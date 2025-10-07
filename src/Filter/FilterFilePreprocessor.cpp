@@ -20,65 +20,31 @@
  */
 
 #include "Filter/FilterFilePreprocessor.hpp"
+#include "Utilities/StringUtils.hpp"
 #include <string_view>  // std::views::reverse
-#include <algorithm>    // std::transform
-#include <utility>      // std::move
-#include <ranges>       // std::ranges::find_if_not
-#include <cctype>       // std::isspace
 #include <string>       // std::string
 
+using namespace FilteringDnsResolver::Utilities;
 using namespace std;
 
 namespace FilteringDnsResolver::Filter
 {
     bool FilterFilePreprocessor::preprocessLine(string &line) noexcept {
-        trimWhitespace(line);
+        StringUtils::trimWhitespace(line);
         if(isBlankLine(line) || isCommentLine(line)) {
             return false;
         }
         trimTrailingDot(line);
-        toLower(line);
+        StringUtils::toLower(line);
 
         return true;
     } // FilterFilePreprocessor::preprocessLine()
-
-    // Implementation inspired by Assistant: https://www.quora.com/How-do-you-trim-white-spaces-with-C
-    void FilterFilePreprocessor::trimWhitespace(string &line) noexcept {
-        // Lambda function serving as a predicate for whitespace characters
-        auto isWhitespace = [](const unsigned char character) {
-            return isspace(character) != 0;
-        };
-
-        // Find the first non-whitespace character from the beginning
-        const auto leadingWhitespaceIt = ranges::find_if_not(line, isWhitespace);
-
-        // Find the first non-whitespace character from the end (base converts reverse iterator to normal)
-        const auto trailingWhitespaceIt = ranges::find_if_not(line | views::reverse, isWhitespace).base();
-
-        // If the entire line is whitespace, clear it
-        if(leadingWhitespaceIt >= trailingWhitespaceIt) {
-            line.clear();
-        }
-        // Else create a substring that excludes leading and trailing whitespace
-        else {
-            line.assign(leadingWhitespaceIt, trailingWhitespaceIt);
-        }
-    } // FilterFilePreprocessor::trimWhitespace()
 
     void FilterFilePreprocessor::trimTrailingDot(string &line) noexcept {
         if(line.back() == '.') {
             line.pop_back();
         }
     } // FilterFilePreprocessor::trimTrailingDot()
-
-    // Implementation inspired by Stefan Mai: https://stackoverflow.com/a/313990
-    void FilterFilePreprocessor::toLower(string &line) noexcept {
-        auto toLowerCharacter = [](const unsigned char character) {
-            return tolower(character);
-        };
-
-        ranges::transform(line, line.begin(), toLowerCharacter);
-    } // FilterFilePreprocessor::toLower
 
     bool FilterFilePreprocessor::isBlankLine(const string_view line) noexcept {
         return line.empty();

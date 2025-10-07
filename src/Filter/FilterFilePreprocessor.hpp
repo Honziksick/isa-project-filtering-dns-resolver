@@ -32,11 +32,7 @@ namespace FilteringDnsResolver::Filter
         static bool preprocessLine(std::string &line) noexcept;
 
     private:
-        static void trimWhitespace(std::string &line) noexcept;
-
         static void trimTrailingDot(std::string &line) noexcept;
-
-        static void toLower(std::string &line) noexcept;
 
         static bool isBlankLine(std::string_view line) noexcept;
 
