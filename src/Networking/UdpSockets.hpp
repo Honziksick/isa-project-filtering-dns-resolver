@@ -21,7 +21,8 @@
 
 #ifndef UDP_SOCKETS_HPP
 #define UDP_SOCKETS_HPP
-#include <bits/stdint-uintn.h>
+
+#include <cstdint>  // uint16_t
 
 namespace FilteringDnsResolver::Networking
 {
@@ -58,7 +59,7 @@ namespace FilteringDnsResolver::Networking
 
         int mResolverSocketFd{INVALID_FD};
         int mListenerSocketFd{INVALID_FD};
-    }; // UDPSocket
+    }; // UdpSockets
 } // FilteringDnsResolver::Networking
 
 #endif // UDP_SOCKETS_HPP

@@ -178,13 +178,14 @@ namespace FilteringDnsResolver::DnsUtils
             throw DnsParseErrorException(DnsRCodes::FORMERR, "QR");
         }
 
+        // TODO: Decide how tolerant we want to be with
         // Check if RD bit is set (not supported)
-        if(DnsHeader::isRDSet(dnsHeader.mFlags) != 0) {
-            throw DnsParseErrorException(DnsRCodes::NOTIMP, "RD");
-        }
+        // if(!DnsHeader::isRDSet(dnsHeader.mFlags)) {
+        //     throw DnsParseErrorException(DnsRCodes::NOTIMP, "RD");
+        // }
 
         // Check if Z bit is zero (must be 0)
-        if(DnsHeader::isZBitZero(dnsHeader.mFlags) != 0) {
+        if(!DnsHeader::isZBitZero(dnsHeader.mFlags)) {
             throw DnsParseErrorException(DnsRCodes::FORMERR, "ZBIT");
         }
 
@@ -199,6 +200,10 @@ namespace FilteringDnsResolver::DnsUtils
         }
         if(qclass != 1) {
             throw DnsParseErrorException(DnsRCodes::NOTIMP, "QCLASS");
+        }
+
+        if(DnsHeader::getOpcode(dnsHeader.mFlags) != 0) {
+            throw DnsParseErrorException(DnsRCodes::NOTIMP, "OPCODE");
         }
     } // DnsMessageParser::validateQuery
 } // FilteringDnsResolver::DnsUtils
