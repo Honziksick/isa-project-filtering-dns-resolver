@@ -36,13 +36,13 @@ namespace FilteringDnsResolver::DnsUtils
         explicit DnsMessenger(int listenFd);
 
         void sendRefusedMessage(const uint8_t *pMessageBuffer, size_t messageLength,
-                         const sockaddr_in &clientSourceAddress, const DnsQuery &dnsQuery) const;
+                                const sockaddr_in &clientAddress, const DnsQuery &dnsQuery) const;
         void sendNotImpMessage(const uint8_t *pMessageBuffer, size_t messageLength,
-                        const sockaddr_in &clientSourceAddress, const DnsQuery &dnsQuery) const;
+                               const sockaddr_in &clientAddress, const DnsQuery &dnsQuery) const;
         void sendFormErrMessage(const uint8_t *pMessageBuffer, size_t messageLength,
-                         const sockaddr_in &clientSourceAddress, const DnsQuery &dnsQuery) const;
+                                const sockaddr_in &clientAddress, const DnsQuery &dnsQuery) const;
         void sendServFailMessage(const uint8_t *pMessageBuffer, size_t messageLength,
-                          const sockaddr_in &clientSourceAddress, const DnsQuery &dnsQuery) const;
+                                 const sockaddr_in &clientAddress, const DnsQuery &dnsQuery) const;
 
     private:
         int mListenFd;

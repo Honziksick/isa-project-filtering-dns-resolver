@@ -46,9 +46,9 @@ namespace FilteringDnsResolver::DnsUtils
         : mListenFd{listenFd} {}
 
     vector<uint8_t> DnsMessenger::buildErrorReply(const uint8_t *pMessageBuffer,
-                                                     const size_t messageLength,
-                                                     const DnsQuery &parsedQuery,
-                                                     const DnsRCodes rcode) {
+                                                  const size_t messageLength,
+                                                  const DnsQuery &parsedQuery,
+                                                  const DnsRCodes rcode) {
         // Check if the parsed query is valid (has valid qEndOffset)
         const bool isQueryValid = (parsedQuery.mQEndOffset != DnsQuery::EMPTY_FIELD);
 
@@ -95,14 +95,15 @@ namespace FilteringDnsResolver::DnsUtils
     void DnsMessenger::sendDnsReply(const vector<uint8_t> &dnsReply, const sockaddr_in &destinationAddress) const {
         if(dnsReply.empty()) {
             throw InternalErrorException(
-                "DNS reply message is empty eventhough it shuoldn't be. "
-                "Cannot send empty message."
-                );
+                    "DNS reply message is empty eventhough it shuoldn't be. "
+                    "Cannot send empty message."
+                    );
         }
 
         // Send the message
         const ssize_t bytesSent = sendto(mListenFd, dnsReply.data(), dnsReply.size(), 0,
-                                         reinterpret_cast<const sockaddr*>(&destinationAddress), sizeof(destinationAddress));
+                                         reinterpret_cast<const sockaddr*>(&destinationAddress),
+                                         sizeof(destinationAddress));
 
         // If the sendto() function returns an error
         if(bytesSent < 0) {
@@ -123,34 +124,34 @@ namespace FilteringDnsResolver::DnsUtils
 
     void DnsMessenger::sendRefusedMessage(const uint8_t *pMessageBuffer,
                                           const size_t messageLength,
-                                          const sockaddr_in &clientSourceAddress,
+                                          const sockaddr_in &clientAddress,
                                           const DnsQuery &dnsQuery) const {
         const auto message = buildErrorReply(pMessageBuffer, messageLength, dnsQuery, DnsRCodes::REFUSED);
-        sendDnsReply(message, clientSourceAddress);
+        sendDnsReply(message, clientAddress);
     } // DnsMessenger::sendRefusedMessage
 
     void DnsMessenger::sendNotImpMessage(const uint8_t *pMessageBuffer,
                                          const size_t messageLength,
-                                         const sockaddr_in &clientSourceAddress,
+                                         const sockaddr_in &clientAddress,
                                          const DnsQuery &dnsQuery) const {
         const auto message = buildErrorReply(pMessageBuffer, messageLength, dnsQuery, DnsRCodes::NOTIMP);
-        sendDnsReply(message, clientSourceAddress);
+        sendDnsReply(message, clientAddress);
     } // DnsMessenger::sendNotImpMessage
 
     void DnsMessenger::sendFormErrMessage(const uint8_t *pMessageBuffer,
                                           const size_t messageLength,
-                                          const sockaddr_in &clientSourceAddress,
+                                          const sockaddr_in &clientAddress,
                                           const DnsQuery &dnsQuery) const {
         const auto message = buildErrorReply(pMessageBuffer, messageLength, dnsQuery, DnsRCodes::FORMERR);
-        sendDnsReply(message, clientSourceAddress);
+        sendDnsReply(message, clientAddress);
     } // DnsMessenger::sendFormErrMessage
 
     void DnsMessenger::sendServFailMessage(const uint8_t *pMessageBuffer,
                                            const size_t messageLength,
-                                           const sockaddr_in &clientSourceAddress,
+                                           const sockaddr_in &clientAddress,
                                            const DnsQuery &dnsQuery) const {
         const auto message = buildErrorReply(pMessageBuffer, messageLength, dnsQuery, DnsRCodes::SERVFAIL);
-        sendDnsReply(message, clientSourceAddress);
+        sendDnsReply(message, clientAddress);
     } // DnsMessenger::sendServFailMessage
 
     void DnsMessenger::storeBigEndianWordToMessage(vector<uint8_t> &messageBuffer,
