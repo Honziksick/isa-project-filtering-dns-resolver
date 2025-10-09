@@ -8,26 +8,31 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      28.09.2025                                                    *
- * Last edit:    02.10.2025                                                    *
+ * Last edit:    08.10.2025                                                    *
  *                                                                             *
- * Description: This file contains the implementation of the `MainAppFacade`   *
- *              class, which serves as a facade for the Filtering DNS Resolver *
- *              application. The facade pattern is used to provide a           *
- *              simplified interface to a complex subsystem.                   *
+ * Description:  This source file implements the `MainAppFacade` class, which  *
+ *               serves as the main application facade for the Filtering DNS   *
+ *               Resolver. It implements the facade design pattern to provide  *
+ *               a simplified interface to the complex DNS resolver subsystem, *
+ *               coordinating initialization, configuration, and execution of  *
+ *               all application components including argument parsing, domain *
+ *               filtering, network setup, and UDP finite state machine.       *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file MainAppFacade.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief Implementation file for the `MainAppFacade` class.
+ * @brief Source file implementing the `MainAppFacade` class for main
+ *        application coordination and system initialization management.
  */
 
 #include "Facades/MainAppFacade.hpp"
 #include "Arguments/ArgumentParser.hpp"
-#include "Configurators/ResolverSetup.hpp"
+#include "HostnameResolution/ResolverSetup.hpp"
 #include "Filter/FilterFileLoader.hpp"
 #include "Filter/DomainFilter.hpp"
 #include "Networking/UdpSockets.hpp"
+#include "Networking/UdpFsm.hpp"
 #include "Utilities/ExceptionHandler.hpp"
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception
@@ -35,7 +40,7 @@
 #include <memory>     // std::make_unique
 
 using namespace FilteringDnsResolver::Arguments;
-using namespace FilteringDnsResolver::Configurators;
+using namespace FilteringDnsResolver::HostnameResolution;
 using namespace FilteringDnsResolver::Filter;
 using namespace FilteringDnsResolver::Networking;
 using namespace FilteringDnsResolver::Utilities;
@@ -57,36 +62,52 @@ namespace FilteringDnsResolver::Facades
             // Then we set up UDP sockets for listening and sending DNS queries
             setupUdpSockets(mCommandLineOptions.mListenPort);
 
-            // TODO
+            // After that we set up the UDP FSM
+            setupUdpFsm();
+
+            // Finally we run the UDP FSM
+            runUdpFsm();
         }
         catch(const exception &e) {
             ExceptionHandler::handleError(e, ExceptionHandler::TERMINATE);
         }
-    } // MainAppFacade::runResolver()
+    } // MainAppFacade::runResolver
 
     void MainAppFacade::getCommandLineOptions(const int argc, char *argv[]) {
         logger("Parsing command line options...");
         mCommandLineOptions = ArgumentParser::parseArguments(argc, argv);
         logger("Command line options parsed successfully");
-    } // MainAppFacade::getCommandLineOptions()
+    } // MainAppFacade::getCommandLineOptions
 
     void MainAppFacade::getResolverAddress(const string &resolverHostname) {
         logger("Resolving resolver DNS server address...");
         mResolverAddress = ResolverSetup::setupResolver(resolverHostname);
         logger("Resolver DNS server address resolved successfully");
-    } // MainAppFacade::getResolverAddress()
+    } // MainAppFacade::getResolverAddress
 
     void MainAppFacade::buildDomainFilter(const string &filterFilePath) {
         logger("Building domain filter...");
         mDomainFilterPtr = make_unique<DomainFilter>(FilterFileLoader::loadFilter(filterFilePath));
         logger("Domain filter built successfully");
-    } // MainAppFacade::buildDomainFilter()
+    } // MainAppFacade::buildDomainFilter
 
     void MainAppFacade::setupUdpSockets(const uint16_t listenerPort) {
         logger("Setting up UDP sockets...");
-        mUdpSockets = UdpSockets::openUdpSockets(listenerPort);
-        logger("UDP sockets set up successfully");
-    } // MainAppFacade::setupUdpSockets()
+        mUdpSocketsPtr = make_unique<UdpSockets>(UdpSockets::openUdpSockets(listenerPort));
+        logger("UDP sockets set up successful");
+    } // MainAppFacade::setupUdpSockets
+
+    void MainAppFacade::setupUdpFsm() {
+        logger("Setting up UDP FSM...");
+        mUdpFsmPtr = make_unique<UdpFsm>(move(mUdpSocketsPtr), move(mDomainFilterPtr));
+        logger("UDP FSM set up successful");
+    } // MainAppFacade::setupUdpFsm
+
+    void MainAppFacade::runUdpFsm() const {
+        logger("Running the UDP FSM...");
+        mUdpFsmPtr->run();
+        logger("UDP FSM terminated successfully");
+    } // MainAppFacade::runUdpFsm
 } // FilteringDnsResolver::Facades
 
 /*** end of file MainAppFacade.cpp ***/
