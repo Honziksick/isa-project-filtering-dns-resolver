@@ -10,16 +10,20 @@
  * Created:      29.09.2025                                                    *
  * Last edit:    01.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This file implements the `ResolverSetup` class, which         *
+ *               extends `HostnameResolver` to provide specialized             *
+ *               functionality for setting up upstream DNS resolver            *
+ *               configurations.                                               *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file ResolverSetup.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief
+ * @brief File implementing the `ResolverSetup` class for configuring upstream
+ *        DNS resolver connections.
  */
 
-#include "Configurators/ResolverSetup.hpp"
+#include "HostnameResolution/ResolverSetup.hpp"
 #include "Arguments/CommandLineOptions.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Constants/DefaultOptions.hpp"
@@ -32,7 +36,7 @@ using namespace FilteringDnsResolver::Exceptions;
 using namespace FilteringDnsResolver::Constants;
 using namespace std;
 
-namespace FilteringDnsResolver::Configurators
+namespace FilteringDnsResolver::HostnameResolution
 {
     sockaddr_in ResolverSetup::setupResolver(const string &resolverHostname) {
         logger("Starting resolver setup");
@@ -62,6 +66,6 @@ namespace FilteringDnsResolver::Configurators
 
         return resolverAddress;
     } // ResolverSetup::setupResolver
-} // FilteringDnsResolver::Configurators
+} // FilteringDnsResolver::HostnameResolution
 
 /*** end of file ResolverSetup.cpp ***/

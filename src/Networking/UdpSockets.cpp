@@ -10,9 +10,22 @@
  * Created:      02.10.2025                                                    *
  * Last edit:    02.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This source file implements the `UdpSockets` class, which     *
+ *               implements UDP socket management for the DNS resolver         *
+ *               networking layer. It manages creation, binding, and           *
+ *               lifecycle of UDP sockets used for DNS communication,          *
+ *               including resolver socket for upstream DNS communication      *
+ *               and listener socket for client query reception. The class     *
+ *               provides RAII socket management with move semantics and       *
+ *               automatic resource cleanup for reliable network operation.    *
  *                                                                             *
  ******************************************************************************/
+/**
+ * @file UdpSockets.cpp
+ * @author Jan Kalina \<xkalinj00>
+ * @brief Source file implementing the `UdpSockets` class for UDP socket
+ *        management and DNS networking infrastructure functionality.
+ */
 
 #include "Networking/UdpSockets.hpp"
 #include "Exceptions/CustomExceptions.hpp"
@@ -68,7 +81,7 @@ namespace FilteringDnsResolver::Networking
         // Set socket options to allow address reuse
         // SOL_SOCKET - manipulate options at the sockets API level
         // SO_REUSEADDR - allow reuse of local addresses
-        int opt = 1;
+        constexpr int opt = 1;
         if(setsockopt(listenerSocketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
             close(listenerSocketFd);
             throw SocketErrorException(

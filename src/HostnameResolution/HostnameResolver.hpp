@@ -18,8 +18,8 @@
 /**
  * @file HostnameResolver.hpp
  * @author Jan Kalina \<xkalinj00>
- * @brief Header file declaring functions for resolving the provided server
- *        hostname.
+ * @brief Header file declaring `HostnameResolver` class for resolving the
+ *        provided server hostname.
  */
 
 #ifndef HOSTNAME_RESOLVER_HPP
@@ -28,7 +28,7 @@
 #include <string>   // std::string
 #include <netdb.h>  // addrinfo
 
-namespace FilteringDnsResolver::Configurators
+namespace FilteringDnsResolver::HostnameResolution
 {
     /**
      * @class HostnameResolver
@@ -50,10 +50,15 @@ namespace FilteringDnsResolver::Configurators
          *
          * @warning The caller is responsible for freeing returned structure
          *          using `freeaddrinfo()`.
+         *
+         * @throws HostnameResolutionErrorException if the hostname cannot be
+         *         resolved.
+         * @throws InvalidArgumentErrorException if the provided hostname is empty,
+         *         or if address resolution fails because of invalid hostname.
          */
         static addrinfo *resolveHostname(const std::string &hostname);
     }; // HostnameResolver
-} // FilteringDnsResolver::Configurators
+} // FilteringDnsResolver::HostnameResolution
 
 #endif // HOSTNAME_RESOLVER_HPP
 

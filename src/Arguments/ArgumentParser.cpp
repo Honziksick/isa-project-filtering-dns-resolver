@@ -32,8 +32,8 @@
 /* CLI11 je header-only library for command-line parsing
  * Source: https://github.com/CLIUtils/CLI11
  * License: See below (for more details, refer to the "CLI11.hpp" file).
- * CLI11 2.5.0 Copyright (c) 2017-2025 University of Cincinnati, developed by Henry
- * Schreiner under NSF AWARD 1414736. All rights reserved.
+ * CLI11 2.5.0 Copyright (c) 2017-2025 University of Cincinnati, developed by
+ * Henry Schreiner under NSF AWARD 1414736. All rights reserved.
  */
 #include "Arguments/CLI11.hpp"
 
@@ -75,8 +75,7 @@ namespace FilteringDnsResolver::Arguments
             throw InvalidArgumentException(string(e.what()));
         }
 
-        logger(
-                "Arguments parsed successfully: mResolverHostname: %s, mListenPort: %u, "
+        logger("Arguments parsed successfully: mResolverHostname: %s, mListenPort: %u, "
                 "mFilterFilePath: %s, mVerbose: %s,",
                 commandLineOptions.mResolverHostname.c_str(),
                 commandLineOptions.mListenPort,
@@ -126,17 +125,19 @@ namespace FilteringDnsResolver::Arguments
         app.footer(
                 "\nEXAMPLE USAGE:\n"
                 "  dns -s 1.1.1.1 -f blocked.txt\n"
-                "  dns -s resolver.example.org -p 1053 -f /etc/dns/blocked.txt -v\n"
+                "  dns -s resolver.example.org -p 1053 -f blocked.txt -v\n"
                 "\n"
                 "\nEXIT CODES:\n"
                 "   0  – Success\n"
-                "  64  – Invalid argument (usage error)\n"
-                "  66  – Filter file not found / unreadable\n"
-                "  68  – Invalid resolver hostname\n"
+                "   1  – Internal error\n"
+                "  22  – Invalid argument (usage error)\n"
+                "  23  – Invalid filter file content\n"
+                "  42  – Unknown error\n"
                 "  71  – OS/protocol error during startup (socket/bind)\n"
-                "  77  – Insufficient privilege (binding privileged port)\n"
-                "  78  – Configuration error\n"
-                "  110 – Timeout (if used during startup)\n"
+                " 107  – Socket error\n"
+                " 111  – Connection error (send / receive)\n"
+                " 113  – Hostname resolution error (getaddrinfo)\n"
+                " 130  – Process interrupted by user (SIGINT)\n"
                 );
     } // ArgumentParser::setupCliApp
 } // FilteringDnsResolver::Arguments

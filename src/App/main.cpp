@@ -42,7 +42,7 @@ int main(const int argc, char *argv[]) {
     }
     catch(const exception &e) {
         logger("Exception caught in main(): %s", e.what());
-        Utilities::ExceptionHandler::handleError(e, Utilities::ExceptionHandler::TERMINATE);
+        Utilities::ExceptionHandler::handleError(e, Utilities::ExceptionHandler::TERMINATE);  // sanity handle
     }
 
     logger("Successfully exiting Filtering DNS Resolver application");

@@ -47,7 +47,6 @@ namespace FilteringDnsResolver::Enums
         HOSTNAME_RESOLUTION_ERROR         = 113,   /**< Hostname resolution error code (EHOSTUNREACH).                    */
         USER_INTERRUPTION_ERROR           = 130    /**< Process interrupted by user error code (128 + SIGINT).            */
     }; // ExitCodes
-
 } // FilteringDnsResolver::Enums
 
 #endif // EXIT_CODES_HPP

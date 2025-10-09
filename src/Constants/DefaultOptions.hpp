@@ -10,14 +10,14 @@
  * Created:      23.09.2025                                                    *
  * Last edit:    30.09.2025                                                    *
  *                                                                             *
- * Description:  This file contains default values for command line options    *
- *               used in the Filtering DNS Resolver application.               *
+ * Description:  This file contains default values used in the Filtering       *
+ *               DNS Resolver application.                                     *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file DefaultOptions.hpp
  * @author Jan Kalina \<xkalinj00>
- * @brief Header file containing default values for command line options.
+ * @brief Header file containing default values used accross the project.
  */
 
 #ifndef DEFAULT_OPTIONS_HPP

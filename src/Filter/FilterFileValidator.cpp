@@ -10,13 +10,20 @@
  * Created:      30.09.2025                                                    *
  * Last edit:    01.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This source file implements the `FilterFileValidator` class,  *
+ *               which does comprehensive domain name validation for filter    *
+ *               configuration files. It validates domain format compliance    *
+ *               with DNS standards including length limits, character sets,   *
+ *               and label structure. The validator ensures all domains in     *
+ *               filter files meet RFC specifications before being used in     *
+ *               the DNS resolver filtering engine for reliable operation.     *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file FilterFileValidator.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief
+ * @brief Source file implementing the `FilterFileValidator` class for domain
+ *        name validation and DNS standard compliance checking functionality.
  */
 
 #include "Filter/FilterFileValidator.hpp"

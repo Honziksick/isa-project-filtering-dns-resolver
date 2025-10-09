@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    01.10.2025                                                    *
+ * Last edit:    07.10.2025                                                    *
  *                                                                             *
  * Description:  This file contains constant exception messages used in the    *
  *               Filtering DNS Resolver project.                               *

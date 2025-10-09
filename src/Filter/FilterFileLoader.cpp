@@ -10,13 +10,20 @@
  * Created:      30.09.2025                                                    *
  * Last edit:    01.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This source file implements the `FilterFileLoader` class,     *
+ *               which implements domain filter file loading and processing    *
+ *               for the DNS resolver. It combines file preprocessing and      *
+ *               validation functionality to load, clean, and prepare domain   *
+ *               filter lists from configuration files. The loader handles     *
+ *               deduplication and ensures valid domain format for efficient   *
+ *               filtering operations in the DNS resolver application.         *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file FilterFileLoader.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief
+ * @brief Source file implements the `FilterFileLoader` class for domain filter
+ *        file loading, processing, and validation functionality.
  */
 
 #include "Filter/FilterFileLoader.hpp"

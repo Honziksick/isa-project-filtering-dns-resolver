@@ -30,8 +30,8 @@
 /* CLI11 je header-only library for command-line parsing
  * Source: https://github.com/CLIUtils/CLI11
  * License: See below (for more details, refer to the "CLI11.hpp" file).
- * CLI11 2.5.0 Copyright (c) 2017-2025 University of Cincinnati, developed by Henry
- * Schreiner under NSF AWARD 1414736. All rights reserved.
+ * CLI11 2.5.0 Copyright (c) 2017-2025 University of Cincinnati, developed by
+ * Henry Schreiner under NSF AWARD 1414736. All rights reserved.
  */
 #include "Arguments/CLI11.hpp"
 

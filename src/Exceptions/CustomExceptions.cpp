@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    02.10.2025                                                    *
+ * Last edit:    07.10.2025                                                    *
  *                                                                             *
  * Description:  Implementation file for the `BaseCustomException` class used  *
  *               in the Filtering DNS Resolver.                                *
@@ -76,11 +76,11 @@ namespace FilteringDnsResolver::Exceptions
         } {}
 
     DnsParseErrorException::DnsParseErrorException(const DnsRCodes code, string detail) noexcept
-    : BaseCustomException{
-        code,
-        string{},
-        move(detail)
-    } {}
+        : BaseCustomException{
+            code,
+            string{},
+            move(detail)
+        } {}
 
     ConnectionErrorException::ConnectionErrorException(string detail) noexcept
         : BaseCustomException{
@@ -105,7 +105,7 @@ namespace FilteringDnsResolver::Exceptions
 
     UserInterruptionException::UserInterruptionException(string detail) noexcept
         : BaseCustomException{
-            ExitCodes::SUCCESS,
+            ExitCodes::USER_INTERRUPTION_ERROR,
             ExceptionMessages::USER_INTERRUPTION_MSG,
             move(detail)
         } {}

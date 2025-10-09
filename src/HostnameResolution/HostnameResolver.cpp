@@ -22,7 +22,7 @@
  *        resolving the provided server hostname.
  */
 
-#include "Configurators/HostnameResolver.hpp"
+#include "HostnameResolution/HostnameResolver.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Constants/DefaultOptions.hpp"
 #include "Utilities/Logger.hpp"
@@ -35,7 +35,7 @@ using namespace FilteringDnsResolver::Exceptions;
 using namespace FilteringDnsResolver::Constants;
 using namespace std;
 
-namespace FilteringDnsResolver::Configurators
+namespace FilteringDnsResolver::HostnameResolution
 {
     addrinfo *HostnameResolver::resolveHostname(const string &hostname) {
         logger("Starting hostname resolution for hostname: '%s'", hostname.c_str());
@@ -75,7 +75,7 @@ namespace FilteringDnsResolver::Configurators
 
         logger("Hostname resolution successful. Returning addrinfo structure.");
         return pResult;
-    } // HostnameResolver::resolveHostname()
-} // FilteringDnsResolver::Utilities
+    } // HostnameResolver::resolveHostname
+} // FilteringDnsResolver::HostnameResolution
 
 /*** end of file HostnameResolver.cpp ***/

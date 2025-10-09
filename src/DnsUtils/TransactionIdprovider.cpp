@@ -1,5 +1,5 @@
 /*******************************************************************************
-*                                                                             *
+ *                                                                             *
  * Project:      Filtering DNS Resolver                                        *
  * University:   Faculty of Information Technology, BUT                        *
  * Subject:      ISA: Network Applications and Network Administration          *
@@ -10,13 +10,19 @@
  * Created:      07.10.2025                                                    *
  * Last edit:    08.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This source file implements `TransactionIdProvider` class,    *
+ *               which manages allocation and deallocation of DNS transaction  *
+ *               IDs for the resolver. It provides thread-safe generation of   *
+ *               unique 16-bit transaction IDs using random number generation  *
+ *               and bitmap tracking to prevent ID conflicts in concurrent     *
+ *               DNS query processing.                                         *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file TransactionIdProvider.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief
+ * @brief Source file implementing the `TransactionIdProvider` class for
+ *        DNS transaction ID allocation and management functionality.
  */
 
 #include "DnsUtils/TransactionIdProvider.hpp"
@@ -32,7 +38,7 @@ using namespace std;
 namespace FilteringDnsResolver::DnsUtils
 {
     TransactionIdProvider::TransactionIdProvider()
-        : mUsed{CustomLimits::MAX_TX_ID16 + 1, false} {}
+        : mUsed(CustomLimits::MAX_TX_ID16 + 1, false) {}
 
     uint16_t TransactionIdProvider::getNextId() noexcept {
         // First we try a limited number of random attempts
@@ -43,7 +49,7 @@ namespace FilteringDnsResolver::DnsUtils
                 markUsed(candidateId);
                 return candidateId;
             }
-        }
+        } // for(RNG attempts)
 
         // Fallback by linear search (slower)
         // (start from a random position, then wrap around)
@@ -54,7 +60,7 @@ namespace FilteringDnsResolver::DnsUtils
                 markUsed(candidateId);
                 return candidateId;
             }
-        }
+        } // for(linear search)
 
         // Oops, all IDs are used
         return ALL_IDS_USED;
@@ -75,6 +81,6 @@ namespace FilteringDnsResolver::DnsUtils
     void TransactionIdProvider::releaseId(const uint16_t id) noexcept {
         mUsed[id] = false;
     } // TransactionIdProvider::releaseId
-}
+} // FilteringDnsResolver::DnsUtils
 
 /*** end of file TransactionIdProvider.cpp ***/

@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    24.09.2025                                                    *
+ * Last edit:    08.10.2025                                                    *
  *                                                                             *
  * Description:  This file contains the declaration of the `CastUtils`         *
  *               class, which provides utility methodss for type casting,      *
@@ -29,7 +29,10 @@
 #include "Exceptions/CustomExceptions.hpp"
 #include "Utilities/Logger.hpp"
 #include <type_traits>  // std::is_enum_v, std::is_integral_v, std::is_same_v
+#include <algorithm>    // std::ranges::clamp
 #include <cstdint>      // uint8_t, uint16_t
+#include <limits>       // std::numeric_limits
+#include <chrono>       // std::chrono
 #include <string>       // std::string
 #include <vector>       // std::vector
 
@@ -81,7 +84,7 @@ namespace FilteringDnsResolver::Utilities
          * @return uint16_t The big-endian 16-bit word created from the two bytes.
          */
         template <typename IntegerType>
-        static constexpr size_t castTwoBytesToWord(const std::vector<IntegerType> &byteVector, size_t startIndex) {
+        static constexpr uint16_t castTwoBytesToWord(const std::vector<IntegerType> &byteVector, size_t startIndex) {
             static_assert(std::is_same_v<IntegerType, uint8_t>, "Template parameter must be uint8_t.");
 
             // Check if the startIndex and the next byte are within the bounds of the vector
@@ -126,6 +129,76 @@ namespace FilteringDnsResolver::Utilities
 
             return std::vector<uint8_t>{higherByte, lowerByte};
         } // CastUtils::castWordToTwoBytes
+
+        /**
+         * @brief Converts a raw byte array to a `std::vector<uint8_t>`.
+         * @details Creates a new vector and copies the specified number of bytes
+         *          from the provided raw pointer. This function is safe to call
+         *          with `length == 0` and a `NULL` pointer - in that case it
+         *          returns an empty vector. If the pointer is `NULL` and
+         *          `length > 0`, an exception is thrown.
+         *
+         * @param pData Pointer to the source byte array (may be `nullptr` only
+         *              when `length == 0`).
+         * @param length Number of bytes to copy from the source array.
+         *
+         * @return std::vector<uint8_t> A vector containing a copy of the input bytes.
+         *
+         * @throws Exceptions::InternalErrorException If `data` is `nullptr` while `length > 0`.
+         */
+        static std::vector<uint8_t> castByteArrayToVector(const uint8_t *pData, const size_t length) {
+            if(length == 0) {
+                return {};
+            }
+
+            if(pData == nullptr) {
+                throw Exceptions::InternalErrorException(
+                        "Null data pointer with non-zero length was given to `castByteArrayToVector`"
+                        );
+            }
+
+            std::vector<uint8_t> out(length);
+            for(size_t iByte = 0; iByte < length; iByte++) {
+                out[iByte] = pData[iByte];
+            }
+            return out;
+        } // CastUtils::castByteArrayToVector
+
+        /**
+         * @brief Copies bytes from a `std::vector<uint8_t>` into a raw byte array.
+         * @details Copies up to `destinationSize` bytes from `source` into
+         *          `pDestination`. If `destinationSize` is smaller than
+         *          `source.size()`, the copy is truncated to fit the destination.
+         *          It is safe to call this function with `destinationSize == 0`
+         *          and a `nullptr` - in that case, nothing is written and 0 is
+         *          returned.
+         *
+         * @param source Source vector containing the bytes to copy.
+         * @param pDestination Destination pointer to a writable byte array
+         *                     (may be `nullptr` only when `destinationSize == 0`).
+         * @param destinationSize Capacity of the destination array in bytes.
+         *
+         * @return size_t The number of bytes written to `pDestination`.
+         *
+         * @throws Exceptions::InternalErrorException If `pDestination` is `nullptr` while `destSize > 0`.
+         */
+        static size_t castVectorToByteArray(const std::vector<uint8_t> &source,
+                                            uint8_t *pDestination, const size_t destinationSize) {
+            if(destinationSize == 0) {
+                return 0;
+            }
+
+            if(pDestination == nullptr) {
+                throw Exceptions::InternalErrorException(
+                        "Null destination pointer with non-zero size in castVectorToByteArray");
+            }
+
+            const size_t toCopy = (source.size() < destinationSize) ? source.size() : destinationSize;
+            for(size_t iByte = 0; iByte < toCopy; iByte++) {
+                pDestination[iByte] = source[iByte];
+            }
+            return toCopy;
+        } // CastUtils::castVectorToByteArray
 
         /**
          * @brief Converts an enum value to its underlying integer representation.
@@ -230,6 +303,15 @@ namespace FilteringDnsResolver::Utilities
             // Throw an exception if the string is not found
             return EnumType::ANY;
         } // CastUtils::castStringToEnum
+
+        static int castMillisecondsToInt(const std::chrono::milliseconds ms) {
+            const auto clamped = std::ranges::clamp(
+                    static_cast<long long>(ms.count()),
+                    static_cast<long long>(std::numeric_limits<int>::min()),
+                    static_cast<long long>(std::numeric_limits<int>::max())
+                    );
+            return static_cast<int>(clamped);
+        } // CastUtils::castMillisecondsToInt
     }; // CastUtils
 } // FilteringDnsResolver::Utilities
 

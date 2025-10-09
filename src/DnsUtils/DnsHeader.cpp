@@ -10,13 +10,21 @@
  * Created:      02.10.2025                                                    *
  * Last edit:    02.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This source file implements the `DnsHeader` class, which      *
+ *               represents and manipulates DNS message headers according to   *
+ *               RFC 1035. It provides methods for extracting and checking     *
+ *               individual flag bits and fields within the DNS header         *
+ *               structure.                                                    *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file DnsHeader.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief
+ * @brief Source file implementing the `DnsHeader` class for DNS message header
+ *        representation and manipulation.
+ *
+ * @note This implementation was inspired by (primarily section 2):
+ *       `https://medium.com/@s12deff/command-and-control-c2-dns-server-part-i-d662a6764aff`
  */
 
 #include "DnsUtils/DnsHeader.hpp"

@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    23.09.2025                                                    *
+ * Last edit:    07.10.2025                                                    *
  *                                                                             *
  * Description: Header file declaring project specific numeric limits used     *
  *              across modules, especially for DNS related value ranges.       *
@@ -25,6 +25,7 @@
 #define CUSTOM_LIMITS_HPP
 
 #include <cstdint>  // uint16_t
+#include <limits>   // std::numeric_limits
 
 namespace FilteringDnsResolver::Constants
 {
@@ -52,6 +53,9 @@ namespace FilteringDnsResolver::Constants
          *          16-bit TXID space (0-65535) is reachable.
          */
         static constexpr uint16_t MAX_TX_ID16 = std::numeric_limits<uint16_t>::max();
+
+        // OTHERS
+        static constexpr size_t MAX_DNS_UDP_MESSAGE_SIZE{512};  /**< Maximum DNS message size over UDP as per RFC 1035. */
     }; // CustomLimits
 } // FilteringDnsResolver::Constants
 

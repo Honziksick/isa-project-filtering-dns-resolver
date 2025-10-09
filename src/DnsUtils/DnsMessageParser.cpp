@@ -10,13 +10,19 @@
  * Created:      02.10.2025                                                    *
  * Last edit:    02.10.2025                                                    *
  *                                                                             *
- * Description:                                                                *
+ * Description:  This source file implements the `DnsMessageParser` class,     *
+ *               which implements parsing and validation of DNS query messages *
+ *               according to RFC 1035. It provides functionality for          *
+ *               extracting DNS header fields, QNAME domain names, QTYPE and   *
+ *               QCLASS values from raw message buffers with comprehensive     *
+ *               validation of message format and protocol compliance.         *
  *                                                                             *
  ******************************************************************************/
 /**
  * @file DnsMessageParser.cpp
  * @author Jan Kalina \<xkalinj00>
- * @brief
+ * @brief Source file implementing the `DnsMessageParser` class for DNS message
+ *        parsing and validation functionality.
  */
 
 #include "DnsUtils/DnsMessageParser.hpp"
@@ -25,11 +31,9 @@
 #include "Enums/DnsRCodes.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Utilities/StringUtils.hpp"
-#include <arpa/inet.h>  // ntohs()
-#include <cstdint>      // uint8_t, uint16_t
-#include <cstring>      // std::memcpy
-#include <utility>      // std::move
-#include <string>       // std::string
+#include <cstdint>  // uint8_t, uint16_t
+#include <utility>  // std::move
+#include <string>   // std::string
 
 using namespace FilteringDnsResolver::Enums;
 using namespace FilteringDnsResolver::Exceptions;
@@ -50,7 +54,7 @@ namespace FilteringDnsResolver::DnsUtils
         size_t offset = DnsQuery::HEADER_TRUE_SIZE;
 
         // Then we parse the domain name (QNAME) label by label
-        string qname;
+        string qname{};
         if(!parseQName(pMessageBuffer, messageBufferLength, offset, qname)) {
             throw DnsParseErrorException(DnsRCodes::FORMERR, "QNAME");  // If QNAME is malformed
         }
@@ -177,12 +181,6 @@ namespace FilteringDnsResolver::DnsUtils
         if(DnsHeader::isQRSet(dnsHeader.mFlags)) {
             throw DnsParseErrorException(DnsRCodes::FORMERR, "QR");
         }
-
-        // TODO: Decide how tolerant we want to be with
-        // Check if RD bit is set (not supported)
-        // if(!DnsHeader::isRDSet(dnsHeader.mFlags)) {
-        //     throw DnsParseErrorException(DnsRCodes::NOTIMP, "RD");
-        // }
 
         // Check if Z bit is zero (must be 0)
         if(!DnsHeader::isZBitZero(dnsHeader.mFlags)) {
