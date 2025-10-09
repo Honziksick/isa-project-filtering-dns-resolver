@@ -39,6 +39,8 @@
 #include <string>     // std::string
 #include <memory>     // std::make_unique
 
+bool isVerboseSet = false;
+
 using namespace FilteringDnsResolver::Arguments;
 using namespace FilteringDnsResolver::HostnameResolution;
 using namespace FilteringDnsResolver::Filter;
@@ -52,6 +54,9 @@ namespace FilteringDnsResolver::Facades
         try {
             // First we parse command line options
             getCommandLineOptions(argc, argv);
+
+            // Set the global verbose flag
+            isVerboseSet = mCommandLineOptions.mVerbose;
 
             // After we create the domain filter instance
             buildDomainFilter(mCommandLineOptions.mFilterFilePath);
@@ -93,7 +98,7 @@ namespace FilteringDnsResolver::Facades
 
     void MainAppFacade::setupUdpSockets(const uint16_t listenerPort) {
         logger("Setting up UDP sockets...");
-        mUdpSocketsPtr = make_unique<UdpSockets>(UdpSockets::openUdpSockets(listenerPort));
+        mUdpSocketsPtr = UdpSockets::openUdpSockets(listenerPort);
         logger("UDP sockets set up successful");
     } // MainAppFacade::setupUdpSockets
 

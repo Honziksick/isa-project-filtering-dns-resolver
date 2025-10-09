@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      23.09.2025                                                    *
- * Last edit:    23.09.2025                                                    *
+ * Last edit:    09.10.2025                                                    *
  *                                                                             *
  * Description:  Header file for the `Logger` utility, which provides a        *
  *               flexible mechanism for logging debug messages with contextual *
@@ -38,6 +38,16 @@
 
 // Define DEBUG_PRINT to enable debug printing
 #define DEBUG_PRINT
+
+/**
+ * @brief Global flag controlling verbose output mode.
+ *
+ * @details This boolean variable determines whether verbose messages
+ *          are displayed. It should be set to true when the user
+ *          provides the -v or --verbose command line argument.
+ *          Default value is `false` (verbose mode disabled).
+ */
+extern bool isVerboseSet;
 
 namespace FilteringDnsResolver::Utilities
 {
@@ -86,7 +96,7 @@ namespace FilteringDnsResolver::Utilities
             // Format the log message
             std::stringstream logMessage;
             logMessage << color
-                    << std::left << std::setw(60) << shortPath << ":"
+                    << std::left << std::setw(35) << shortPath << ":"
                     << std::left << std::setw(4) << line << " | "
                     << std::right << std::setw(30) << func << " | ";
 
@@ -125,6 +135,29 @@ FilteringDnsResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, forma
 #else
 #define logger(format, ...) (0)
 #endif // DEBUG_PRINT
+
+/**
+* @def verbose(format, ...)
+ * @brief Macro for conditional verbose logging.
+ *
+ * @details This macro logs verbose messages to the standard error stream (`stderr`)
+ *          with contextual information such as the file name, line number,
+ *          and function name. The output is color-coded using cyan escape sequences
+ *          defined in `ColorEscapeSequences.hpp`. Verbose logging provides detailed
+ *          information for debugging and troubleshooting purposes.
+ *
+ * @note The macro only outputs messages if the global variable `isVerboseSet`
+ *       is set to true (typically controlled by the -v command line argument).
+ *       This allows runtime control of verbose output without recompilation.
+ *
+ * @param format A printf-style format string for the verbose log message.
+ * @param ... Additional arguments for the format string.
+ */
+#define verbose(format, ...) do { \
+if (isVerboseSet) { \
+FilteringDnsResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, format, FilteringDnsResolver::Constants::Color::CYAN, ##__VA_ARGS__); \
+} \
+} while(0)
 
 #endif // LOGGER_HPP
 

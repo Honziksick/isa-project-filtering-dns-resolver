@@ -27,6 +27,7 @@
 
 #include "DnsUtils/DnsQuery.hpp"
 #include "DnsUtils/DnsHeader.hpp"
+#include "Utilities/Logger.hpp"
 #include <utility>  // std::move
 #include <string>   // std::string
 
@@ -40,7 +41,18 @@ namespace FilteringDnsResolver::DnsUtils
           mQEndOffset{qEndOffset},
           mQName{move(qName)},
           mQType{qType},
-          mQClass{qClass} {}
+          mQClass{qClass} {
+        logger("DnsQuery::DnsQuery() constructor called with parameters:");
+        logger("  Header: ID=%u, flags=0x%04X, qdcount=%u, ancount=SKIPPED, nscount=SKIPPED, arcount=SKIPPED",
+               mHeader.mId, mHeader.mFlags, mHeader.mQdCount);
+        logger("  Question end offset: %zu bytes", mQEndOffset);
+        logger("  QNAME: '%s' (length=%zu)", mQName.c_str(), mQName.length());
+        logger("  QTYPE: %u, QCLASS: %u", mQType, mQClass);
+
+        verbose("DNS query object created for domain '%s' (type %u, class %u)",
+                mQName.c_str(), mQType, mQClass);
+        logger("DnsQuery object successfully constructed");
+    } // DnsQuery::DnsQuery
 } // FilteringDnsResolver::DnsUtils
 
 /*** end of file DnsQuery.cpp ***/

@@ -26,7 +26,9 @@
  */
 
 #include "DnsUtils/Transaction.hpp"
+#include "Utilities/Logger.hpp"
 #include <netinet/in.h>  // sockaddr_in
+#include <arpa/inet.h>   // inet_ntoa(), ntohs()
 #include <chrono>        // std::chrono::steady_clock
 #include <cstdint>       // uint16_t
 
@@ -35,7 +37,17 @@ namespace FilteringDnsResolver::DnsUtils
     Transaction::Transaction(const sockaddr_in &clientAddress, const uint16_t originalId)
         : mClientAddress{clientAddress},
           mOriginalId{originalId},
-          mTimestamp{std::chrono::steady_clock::now()} {}
+          mTimestamp{std::chrono::steady_clock::now()} {
+        logger("Transaction::Transaction() constructor called with parameters:");
+        logger("  Client address: %s:%u", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
+        logger("  Original transaction ID: %u (0x%04X)", originalId, originalId);
+        logger("  Timestamp: %lld nanoseconds since epoch", static_cast<long long>(mTimestamp.time_since_epoch().count()));
+
+        verbose("Created DNS transaction for client %s:%u (ID: %u)",
+                inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), originalId);
+
+        logger("Transaction object successfully constructed");
+    }
 } // FilteringDnsResolver::DnsUtils
 
 /*** end of file Transaction.cpp ***/

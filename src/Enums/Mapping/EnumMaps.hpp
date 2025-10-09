@@ -25,6 +25,8 @@
 #define ENUM_MAPS_HPP
 
 #include "Enums/ExitCodes.hpp"
+#include "Enums/DnsOpcodes.hpp"
+#include "Enums/DnsRCodes.hpp"
 #include <unordered_map>  // std::unordered_map
 #include <string>         // std::string
 
@@ -49,6 +51,18 @@ namespace FilteringDnsResolver::Enums::Mapping
          * @return A constant reference to the map of `ExitCodes` to strings.
          */
         static const std::unordered_map<ExitCodes, std::string> &getExitCodesMap();
+
+        /**
+         * @brief Retrieves the mapping for `DnsOpcodes` to strings.
+         * @return A constant reference to the map of `DnsOpcodes` to strings.
+         */
+        static const std::unordered_map<DnsOpcodes, std::string> &getDnsOpcodesMap();
+
+        /**
+         * @brief Retrieves the mapping for `DnsRCodes` to strings.
+         * @return A constant reference to the map of `DnsRCodes` to strings.
+         */
+        static const std::unordered_map<DnsRCodes, std::string> &getDnsRCodesMap();
     }; // EnumMaps
 } // FilteringDnsResolver::Enums::Mapping
 

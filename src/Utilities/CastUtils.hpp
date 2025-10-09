@@ -201,6 +201,24 @@ namespace FilteringDnsResolver::Utilities
         } // CastUtils::castVectorToByteArray
 
         /**
+         * @brief Converts an integer value to its corresponding enum representation.
+         * @details This function uses a static assertion to ensure that the
+         *          template parameter is an enum type. If a non-enum type is
+         *          used, a compile-time error will occur. The function then
+         *          safely casts the integer value to the specified enum type.
+         *
+         * @param integerValue The integer value to convert to enum.
+         * @tparam EnumType The type of the enum to be converted to. Must be an enum type.
+         *
+         * @return EnumType The enum representation of the integer value.
+         */
+        template <typename EnumType>
+        static constexpr EnumType castIntToEnum(int integerValue) {
+            static_assert(std::is_enum_v<EnumType>, "Template parameter must be an EnumType");
+            return static_cast<EnumType>(integerValue);
+        } // CastUtils::castIntToEnum
+
+        /**
          * @brief Converts an enum value to its underlying integer representation.
          * @details This function uses a static assertion to ensure that the
          *          template parameter is an enum type. If a non-enum type is

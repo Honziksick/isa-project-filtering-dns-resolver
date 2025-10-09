@@ -34,8 +34,9 @@
 #include <sys/socket.h>  // socket(), setsockopt(), bind()
 #include <unistd.h>      // close()
 #include <cstring>       // std::strerror
-#include <string>        // std::string
 #include <cerrno>        // errno()
+#include <string>        // std::string
+#include <memory>        // std::make_unique
 
 using namespace FilteringDnsResolver::Exceptions;
 using namespace std;
@@ -44,17 +45,24 @@ namespace FilteringDnsResolver::Networking
 {
     UdpSockets::UdpSockets(const int resolverSocketFd, const int listenerSocketFd)
         : mResolverSocketFd{resolverSocketFd},
-          mListenerSocketFd{listenerSocketFd} {} // UdpSockets::UdpSockets
+          mListenerSocketFd{listenerSocketFd} {
+        logger("UdpSockets constructed with resolverFd=%d, listenerFd=%d",
+       resolverSocketFd, listenerSocketFd);
+    } // UdpSockets::UdpSockets
 
     UdpSockets::UdpSockets(UdpSockets &&otherUdpSockets) noexcept
         : mResolverSocketFd(otherUdpSockets.mResolverSocketFd),
           mListenerSocketFd(otherUdpSockets.mListenerSocketFd) {
+        logger("UdpSockets move constructor: transferring fds %d, %d",
+       mResolverSocketFd, mListenerSocketFd);
+
         otherUdpSockets.mListenerSocketFd = INVALID_FD;
         otherUdpSockets.mResolverSocketFd = INVALID_FD;
     } // UdpSockets::UdpSockets
 
     UdpSockets &UdpSockets::operator=(UdpSockets &&otherUdpSockets) noexcept {
         if(this != &otherUdpSockets) {
+            logger("UdpSockets move assignment: closing current sockets and transferring");
             closeUdpSockets();
             mResolverSocketFd = otherUdpSockets.mResolverSocketFd;
             mListenerSocketFd = otherUdpSockets.mListenerSocketFd;
@@ -65,13 +73,22 @@ namespace FilteringDnsResolver::Networking
     } // UdpSockets::operator=
 
     UdpSockets::~UdpSockets() noexcept {
+        logger("UdpSockets destructor called - cleaning up sockets");
         closeUdpSockets();
     } // UdpSockets::~UdpSockets
 
-    UdpSockets UdpSockets::openUdpSockets(const uint16_t listenerPort) {
+    unique_ptr<UdpSockets> UdpSockets::openUdpSockets(const uint16_t listenerPort) {
+        logger("UdpSockets::openUdpSockets() called with port %u", listenerPort);
+        verbose("Initializing DNS server on port %u", listenerPort);
+
         // Create listener socket
+        logger("Step 1: Creating listener socket");
         const int listenerSocketFd = createUdpSocket();
+        logger("Listener socket creation result: fd=%d", listenerSocketFd);
+
         if(listenerSocketFd < 0) {
+            logger("ERROR: Listener socket creation failed with errno=%d", errno);
+            verbose("Failed to create listener socket");
             throw SocketErrorException(
                     "Failed to create UDP socket for listening via "
                     "'socket(AF_INET, SOCK_DGRAM, 0)': " + string(strerror(errno))
@@ -81,16 +98,23 @@ namespace FilteringDnsResolver::Networking
         // Set socket options to allow address reuse
         // SOL_SOCKET - manipulate options at the sockets API level
         // SO_REUSEADDR - allow reuse of local addresses
+        logger("Step 2: Setting socket options for address reuse");
         constexpr int opt = 1;
+
         if(setsockopt(listenerSocketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            logger("ERROR: setsockopt failed with errno=%d, closing listener socket", errno);
             close(listenerSocketFd);
+            verbose("Failed to configure listener socket");
+
             throw SocketErrorException(
                     "An error occurred while setting listening socket options via "
                     "'setsockopt(SO_REUSEADDR)': " + string(strerror(errno))
                     );
         } // if(setsockopt() < 0)
+        logger("Socket options set successfully");
 
         // Set the listener socket to the specified port on all interfaces
+        logger("Step 3: Binding listener socket to port %u", listenerPort);
         sockaddr_in listenerAddress{};
         listenerAddress.sin_family = AF_INET;                // IPv4
         listenerAddress.sin_port = htons(listenerPort);      // Set the port to listen on
@@ -98,30 +122,45 @@ namespace FilteringDnsResolver::Networking
 
         // Bind the listener socket
         if(bind(listenerSocketFd, reinterpret_cast<sockaddr*>(&listenerAddress), sizeof(listenerAddress)) < 0) {
+            logger("ERROR: bind() failed with errno=%d, closing listener socket", errno);
             close(listenerSocketFd);
+            verbose("Failed to bind to port %u - port may already be in use", listenerPort);
+
             throw SocketErrorException(
                     "Binding the listener socket to port " + to_string(listenerPort) +
                     " via 'bind()' failed: " + string(strerror(errno))
                     );
         } // if(bind() < 0)
+        logger("Listener socket bound successfully to 0.0.0.0:%u", listenerPort);
 
         // Create resolver socket
+        logger("Step 4: Creating resolver socket");
         const int resolverSocketFd = createUdpSocket();
+        logger("Resolver socket creation result: fd=%d", resolverSocketFd);
+
         if(resolverSocketFd < 0) {
+            logger("ERROR: Resolver socket creation failed with errno=%d, cleaning up", errno);
             close(listenerSocketFd);
+            verbose("Failed to create resolver socket");
+
             throw SocketErrorException(
                     "Failed to create UDP socket for resolver via "
                     "'socket(AF_INET, SOCK_DGRAM, 0)': " + string(strerror(errno))
                     );
         } // if(resolverSocketFd < 0)
 
-        logger("UDP sockets ready: 'listenerFd = %d', 'resolverSocketFd = %d'", listenerSocketFd, resolverSocketFd);
-        return {resolverSocketFd, listenerSocketFd};
+        logger("UDP sockets created successfully: listenerFd=%d, resolverFd=%d",
+               listenerSocketFd, resolverSocketFd);
+        verbose("DNS server ready on port %u", listenerPort);
+
+        return make_unique<UdpSockets>(resolverSocketFd, listenerSocketFd);
     } // UdpSockets::openUdpSockets
 
     void UdpSockets::closeUdpSockets() noexcept {
+        logger("UdpSockets::closeUdpSockets() called");
         closeResolverSocket();
         closeListenerSocket();
+        logger("All sockets closed");
     } // UdpSockets::closeUdpSockets
 
     int UdpSockets::getResolverSocketFd() const noexcept {
@@ -133,11 +172,16 @@ namespace FilteringDnsResolver::Networking
     } // UdpSockets::getListenerSocketFd
 
     int UdpSockets::createUdpSocket() {
-        return socket(AF_INET, SOCK_DGRAM, 0);
+        logger("Creating UDP socket with socket(AF_INET, SOCK_DGRAM, 0)");
+        const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+        logger("socket() returned fd=%d", fd);
+
+        return fd;
     } // UdpSockets::createUdpSocket
 
     void UdpSockets::closeResolverSocket() {
         if(mResolverSocketFd != INVALID_FD) {
+            logger("Closing resolver socket fd=%d", mResolverSocketFd);
             close(mResolverSocketFd);
             mResolverSocketFd = INVALID_FD;
         }
@@ -145,6 +189,7 @@ namespace FilteringDnsResolver::Networking
 
     void UdpSockets::closeListenerSocket() {
         if(mListenerSocketFd != INVALID_FD) {
+            logger("Closing listener socket fd=%d", mListenerSocketFd);
             close(mListenerSocketFd);
             mListenerSocketFd = INVALID_FD;
         }

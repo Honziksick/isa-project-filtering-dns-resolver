@@ -31,6 +31,7 @@
 #define UDP_SOCKETS_HPP
 
 #include <cstdint>  // uint16_t
+#include <memory>   // std::unique_ptr
 
 namespace FilteringDnsResolver::Networking
 {
@@ -53,6 +54,17 @@ namespace FilteringDnsResolver::Networking
          *          requiring explicit socket creation through openUdpSockets().
          */
         UdpSockets() = default;
+
+        /**
+         * @brief Private constructor for internal socket pair initialization.
+         *
+         * @details Creates socket manager with provided file descriptors
+         *          for internal use by factory methods and move operations.
+         *
+         * @param resolverSocketFd File descriptor for resolver socket.
+         * @param listenerSocketFd File descriptor for listener socket.
+         */
+        UdpSockets(int resolverSocketFd, int listenerSocketFd);
 
         UdpSockets(const UdpSockets &) = delete;            /**< Copy constructor deleted for exclusive socket ownership. */
         UdpSockets &operator=(const UdpSockets &) = delete; /**< Copy assignment deleted for exclusive socket ownership.  */
@@ -100,7 +112,7 @@ namespace FilteringDnsResolver::Networking
          *
          * @return Configured UdpSockets instance with valid socket descriptors.
          */
-        static UdpSockets openUdpSockets(uint16_t listenerPort);
+        static std::unique_ptr<UdpSockets> openUdpSockets(uint16_t listenerPort);
 
         /**
          * @brief Manually closes both managed UDP sockets.
@@ -133,17 +145,6 @@ namespace FilteringDnsResolver::Networking
         int getListenerSocketFd() const noexcept;
 
     private:
-        /**
-         * @brief Private constructor for internal socket pair initialization.
-         *
-         * @details Creates socket manager with provided file descriptors
-         *          for internal use by factory methods and move operations.
-         *
-         * @param resolverSocketFd File descriptor for resolver socket.
-         * @param listenerSocketFd File descriptor for listener socket.
-         */
-        UdpSockets(int resolverSocketFd, int listenerSocketFd);
-
         /**
          * @brief Creates and configures a UDP socket for DNS communication.
          *

@@ -27,6 +27,8 @@
 
 #include "Enums/Mapping/EnumMaps.hpp"
 #include "Enums/ExitCodes.hpp"
+#include "Enums/DnsOpcodes.hpp"
+#include "Enums/DnsRCodes.hpp"
 #include <unordered_map>  // std::unordered_map
 #include <string>         // std::string
 
@@ -70,6 +72,28 @@ namespace FilteringDnsResolver::Enums::Mapping
     template <>
     inline const std::unordered_map<ExitCodes, std::string> &EnumMappers::getEnumToStringMap<ExitCodes>() {
         return getExitCodesMap();
+    }
+
+    /**
+     * @brief Specialization of the template method to retrieve the mapping for `DnsOpcodes`.
+     * @return A constant reference to the map of `DnsOpcodes` to strings.
+     *
+     * @note Inspired by: https://www.fit.vut.cz/person/peringer/public/ICP/Prednasky/ICP.pdf
+     */
+    template <>
+    inline const std::unordered_map<DnsOpcodes, std::string> &EnumMappers::getEnumToStringMap<DnsOpcodes>() {
+        return getDnsOpcodesMap();
+    }
+
+    /**
+     * @brief Specialization of the template method to retrieve the mapping for `DnsRCodes`.
+     * @return A constant reference to the map of `DnsRCodes` to strings.
+     *
+     * @note Inspired by: https://www.fit.vut.cz/person/peringer/public/ICP/Prednasky/ICP.pdf
+     */
+    template <>
+    inline const std::unordered_map<DnsRCodes, std::string> &EnumMappers::getEnumToStringMap<DnsRCodes>() {
+        return getDnsRCodesMap();
     }
 } // FilteringDnsResolver::Enums::Mapping
 

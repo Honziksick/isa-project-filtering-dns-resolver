@@ -40,6 +40,7 @@
 #include "Utilities/CastUtils.hpp"
 #include <netinet/in.h>  // sockaddr_in
 #include <sys/socket.h>  // recvfrom(), recv()
+#include <arpa/inet.h>   // inet_ntoa(), ntohs()
 #include <cstdint>       // uint8_t, uint16_t
 #include <cstring>       // strerror()
 #include <cerrno>        // errno
@@ -65,29 +66,46 @@ namespace FilteringDnsResolver::Networking
           mForwarderPtr{make_unique<DnsForwarder>(mSocketFds->getResolverSocketFd())},
           mMessengerPtr{make_unique<DnsMessenger>(mSocketFds->getListenerSocketFd())},
           mNextMaintenanceTimestamp{chrono::steady_clock::now() + MAINTENANCE_INTERVAL} {
+        logger("UdpFsm constructor: initializing with listenerFd=%d, resolverFd=%d",
+               mSocketFds->getListenerSocketFd(), mSocketFds->getResolverSocketFd());
+
         if(mSocketFds->getListenerSocketFd() < 0) {
+            logger("ERROR: Invalid listener socket FD: %d", mSocketFds->getListenerSocketFd());
             throw InternalErrorException("Invalid listen socket FD");
         }
         if(mSocketFds->getResolverSocketFd() < 0) {
+            logger("ERROR: Invalid resolver socket FD: %d", mSocketFds->getResolverSocketFd());
             throw InternalErrorException("Invalid resolver socket FD");
         }
         if(!mDomainFilterPtr) {
+            logger("ERROR: Domain filter pointer is null");
             throw InternalErrorException("Domain filter pointer is null");
         }
-        logger("UdpFsm initialized");
+
+        logger("UdpFsm initialized successfully with maintenance interval");
+        verbose("DNS filtering resolver started and ready to accept queries");
     } // UdpFsm::UdpFsm
 
     void UdpFsm::run() {
-        logger("UdpFsm::run(): starting main loop");
+        logger("UdpFsm::run(): starting main event loop");
+        verbose("DNS resolver is now listening for queries...");
+
         array<uint8_t, CustomLimits::MAX_DNS_UDP_MESSAGE_SIZE> buffer{};
+        logger("Allocated receive buffer of %zu bytes", buffer.size());
 
         while(true) {
             pollfd fdWatcher[POLL_FD_COUNT]{};
             setupPollFd(fdWatcher);
 
-            if(pollEvents(fdWatcher) > 0) {
+            const int eventCount = pollEvents(fdWatcher);
+
+            if(eventCount > 0) {
+                logger("Poll returned %d active events", eventCount);
+
                 // Check if a new datagram has arrived from a client
                 if(fdWatcher[POLL_LISTENER_INDEX].revents & POLLIN) {
+                    logger("Client query received on listener socket");
+
                     sockaddr_in clientAddress{};
                     socklen_t clientAddressLength{sizeof(clientAddress)};
                     const ssize_t bytesReceived = recvfrom(mSocketFds->getListenerSocketFd(),
@@ -97,11 +115,10 @@ namespace FilteringDnsResolver::Networking
 
                     // If the recvfrom() function returns an error
                     if(bytesReceived < 0) {
-                        logger("recvfrom() returned error: Failed to receive data. Socket 'FD = %d', "
-                               "error: %s", mSocketFds->getListenerSocketFd(), strerror(errno));
+                        logger("ERROR: recvfrom() failed with errno=%d: %s", errno, strerror(errno));
 
                         if(errno == EAGAIN || errno == EWOULDBLOCK) {
-                            logger("recvfrom() returned EAGAIN or EWOULDBLOCK: UDP datagram exceeds maximum size.");
+                            logger("recvfrom() returned EAGAIN/EWOULDBLOCK: datagram too large");
                             throw ProtocolErrorException("UDP datagram exceeds maximum size.");
                         }
                         else {
@@ -113,21 +130,25 @@ namespace FilteringDnsResolver::Networking
                     }
                     // If the recvfrom() function returns 0, it means the connection has been closed
                     if(bytesReceived == 0) {
-                        logger("sendConfirm(): recvfrom() returned 0: Connection closed by server");
+                        logger("recvfrom() returned 0: connection closed");
                         throw ConnectionErrorException("Connection closed by server. No data received.");
                     }
+
+                    logger("Received %zd bytes from client %s:%d", bytesReceived,
+                           inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
 
                     // We process the received datagram
                     try {
                         onClientDatagram(buffer.data(), static_cast<size_t>(bytesReceived), clientAddress);
                     }
                     catch(const BaseCustomException<ExitCodes> &e) {
-                        logger("onClientDatagram() thrown exception: %s", e.what());
+                        logger("onClientDatagram() exception: %s", e.what());
                         try {
                             mMessengerPtr->sendServFailMessage(buffer.data(), static_cast<size_t>(bytesReceived), clientAddress);
                         }
                         catch(...) {
                             // TODO: what behavior here?
+                            logger("Failed to send SERVFAIL response to client");
                         }
                     }
                     catch(...) {
@@ -137,19 +158,21 @@ namespace FilteringDnsResolver::Networking
                         }
                         catch(...) {
                             // TODO: what behavior here?
+                            logger("Failed to send SERVFAIL response to client");
                         }
                     }
                 } // if(listener POLLIN)
 
                 // Check if answer has arrived from the resolver
                 if(fdWatcher[POLL_RESOLVER_INDEX].revents & POLLIN) {
+                    logger("Response received from upstream resolver");
+
                     const ssize_t bytesReceived = recv(mSocketFds->getResolverSocketFd(),
                                                        buffer.data(), buffer.size(), 0); // we act as UDP client
 
                     // If the recv() function returns an error
                     if(bytesReceived < 0) {
-                        logger("recv() returned error: Failed to receive data. Socket 'FD = %d', "
-                               "error: %s", mSocketFds->getResolverSocketFd(), strerror(errno));
+                        logger("ERROR: recv() from resolver failed with errno=%d: %s", errno, strerror(errno));
                         throw ConnectionErrorException(
                                 "Failed to receive data from the server due "
                                 "to recv() error: " + string(strerror(errno))
@@ -157,9 +180,11 @@ namespace FilteringDnsResolver::Networking
                     }
                     // If the recv() function returns 0, it means the connection has been closed
                     if(bytesReceived == 0) {
-                        logger("recv() returned 0: Connection closed by server");
+                        logger("recv() returned 0: resolver connection closed");
                         throw ConnectionErrorException("Connection closed by server. No data received.");
                     }
+
+                    logger("Received %zd bytes from upstream resolver", bytesReceived);
 
                     try {
                         onResolverDatagram(buffer.data(), static_cast<size_t>(bytesReceived));
@@ -193,13 +218,14 @@ namespace FilteringDnsResolver::Networking
         const int eventCount = poll(fdWatcher, POLL_FD_COUNT, POLL_TIMEOUT_MS);
         if(eventCount < 0) {
             if(errno == EINTR) {
-                logger("poll() interrupted by signal.");
+                logger("poll() interrupted by signal (errno=EINTR)");
+                verbose("DNS resolver interrupted by system signal");
                 throw UserInterruptionException(
                         "poll() interrupted by signal: " + string(strerror(errno))
                         );
             }
             else {
-                logger("poll() error: %s", strerror(errno));
+                logger("ERROR: poll() failed with errno=%d: %s", errno, strerror(errno));
                 throw ConnectionErrorException(
                         "poll() error: " + string(strerror(errno))
                         );
@@ -211,9 +237,14 @@ namespace FilteringDnsResolver::Networking
     void UdpFsm::onClientDatagram(const uint8_t *messageBuffer,
                                   const size_t messageLength,
                                   const sockaddr_in &clientAddress) const {
+        logger("Processing client datagram from %s:%d (%zu bytes)",
+               inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port),
+               messageLength);
+
         // Check minimum length
         if(messageLength < DnsQuery::HEADER_TRUE_SIZE) {
-            logger("Client datagram too short: %zu B", messageLength);
+            logger("Client datagram too short: %zu bytes (minimum: %zu)",
+                   messageLength, static_cast<size_t>(DnsQuery::HEADER_TRUE_SIZE));
             mMessengerPtr->sendFormErrMessage(messageBuffer, messageLength, clientAddress);
             return;
         }
@@ -222,8 +253,11 @@ namespace FilteringDnsResolver::Networking
         DnsQuery dnsQuery{};
         try {
             dnsQuery = DnsMessageParser::parseAndValidate(messageBuffer, messageLength);
+            logger("DNS query parsed successfully: domain='%s'", dnsQuery.mQName.c_str());
         }
         catch(const DnsParseErrorException &e) {
+            logger("DNS parse error (code=%d): %s", e.code(), e.what());
+
             switch(e.code()) {
                 // The query is malformed
                 case CastUtils::castEnumToInt(DnsRCodes::FORMERR):
@@ -242,22 +276,29 @@ namespace FilteringDnsResolver::Networking
 
         // The query is valid, we check if the domain is blocked
         if(mDomainFilterPtr->domainMatches(dnsQuery.mQName)) {
-            logger("Blocked domain: %s", dnsQuery.mQName.c_str());
+            logger("Domain '%s' is blocked by filter", dnsQuery.mQName.c_str());
+            verbose("Blocked query for domain: %s", dnsQuery.mQName.c_str());
             mMessengerPtr->sendRefusedMessage(messageBuffer, messageLength, clientAddress, dnsQuery);
             return;
         }
+        logger("Domain '%s' allowed, forwarding to upstream resolver", dnsQuery.mQName.c_str());
 
         // We forward the query to the resolver, if the domain is not blocked
         mForwarderPtr->forwardQueryToResolver(messageBuffer, messageLength, clientAddress);
     } // UdpFsm::onClientDatagram
 
     void UdpFsm::onResolverDatagram(uint8_t *messageBuffer, const size_t messageLength) const {
+        logger("Processing resolver response (%zu bytes)", messageLength);
+
         // First, we must map the response back to the original client
         sockaddr_in clientAddress{};
         if(!mForwarderPtr->mapResponseFromResolver(messageBuffer, messageLength, clientAddress)) {
-            logger("Unknown response from resolver (no pending mapping)");
+            logger("No client mapping found for resolver response (orphaned response)");
             return;
         }
+
+        logger("Mapped response to client %s:%d, forwarding reply",
+               inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
 
         // Then we send the response back to the client
         mMessengerPtr->sendDnsReply(CastUtils::castByteArrayToVector(messageBuffer, messageLength), clientAddress);
