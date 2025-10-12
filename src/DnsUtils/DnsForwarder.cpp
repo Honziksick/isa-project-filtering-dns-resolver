@@ -33,7 +33,7 @@
 #include "Utilities/CastUtils.hpp"
 #include "Utilities/Logger.hpp"
 #include <netinet/in.h> // sockaddr_in
-#include <sys/socket.h> // sendto()
+#include <sys/socket.h> // send()
 #include <arpa/inet.h>  // inet_ntoa(), ntohs()
 #include <cstring>      // strerror()
 #include <cstdint>      // uint8_t, uint16_t
@@ -108,11 +108,11 @@ namespace FilteringDnsResolver::DnsUtils
         logger("Transaction stored in pending map, total pending transactions: %zu", mPendingTransactions.size());
 
         // Finally, we send the modified message to the resolver
-        logger("Sending DNS query to upstream resolver via socket FD=%d, size=%zu bytes",
-               mResolverFd, updatedMessage.size());
+        logger("Sending DNS query to upstream resolver via socket FD=%d, "
+               "size=%zu bytes",  mResolverFd, updatedMessage.size());
         const ssize_t bytesSent = send(mResolverFd, updatedMessage.data(), updatedMessage.size(), 0);
 
-        // If the sendto() function returns an error
+        // If the send() function returns an error
         if(bytesSent < 0) {
             logger("send() failed: socket FD=%d, error=%s, errno=%d, attempted bytes=%zu",
                    mResolverFd, strerror(errno), errno, updatedMessage.size());

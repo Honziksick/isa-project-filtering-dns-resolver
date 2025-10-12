@@ -43,7 +43,7 @@ namespace FilteringDnsResolver::HostnameResolution
         verbose("Resolving DNS server hostname: %s", hostname.c_str());
 
         // Prepare the 'hints' structure for address resolution
-        logger("Step 1: Preparing addrinfo hints structure");
+        logger("Preparing addrinfo hints structure");
         addrinfo hints{};
         memset(&hints, 0, sizeof(hints));
         logger("addrinfo hints structure zeroed (size=%zu bytes)", sizeof(hints));
@@ -58,7 +58,7 @@ namespace FilteringDnsResolver::HostnameResolution
         logger("  ai_flags = %d (AI_NUMERICSERV for numeric port)", hints.ai_flags);
 
         // Perform the address resolution
-        logger("Step 2: Calling getaddrinfo() for hostname resolution");
+        logger("Calling getaddrinfo() for hostname resolution");
         logger("Using port: %s (DEFAULT_RESOLVER_PORT=%d)",
                to_string(DefaultOptions::DEFAULT_RESOLVER_PORT).c_str(),
                DefaultOptions::DEFAULT_RESOLVER_PORT);
@@ -94,7 +94,7 @@ namespace FilteringDnsResolver::HostnameResolution
             } // switch
         } // if
 
-        logger("Step 3: getaddrinfo() succeeded, analyzing results");
+        logger("getaddrinfo() succeeded, analyzing results");
         if(pResult == nullptr) {
             logger("ERROR: pResult is nullptr despite successful getaddrinfo()");
             verbose("Internal error: no address information returned");

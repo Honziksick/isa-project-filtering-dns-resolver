@@ -293,21 +293,21 @@ namespace FilteringDnsResolver::DnsUtils
         logger("QDCOUNT validation passed");
 
         // Only A IN queries (QTYPE=1, QCLASS=1) are allowed
-        logger("Validating QTYPE: expected=1 (A record), actual=%u", qtype);
-        if(qtype != 1) {
-            logger("Validation failed: QTYPE=%u (only A records supported)", qtype);
-            verbose("Unsupported query type %u (only A records are supported)", qtype);
-            throw DnsParseErrorException(DnsRCodes::NOTIMP, "QTYPE");
-        }
-        logger("QTYPE validation passed (A record query)");
-
-        logger("Validating QCLASS: expected=1 (IN), actual=%u", qclass);
-        if(qclass != 1) {
-            logger("Validation failed: QCLASS=%u (only IN class supported)", qclass);
-            verbose("Unsupported query class %u (only Internet class is supported)", qclass);
-            throw DnsParseErrorException(DnsRCodes::NOTIMP, "QCLASS");
-        }
-        logger("QCLASS validation passed (Internet class)");
+        // logger("Validating QTYPE: expected=1 (A record), actual=%u", qtype);
+        // if(qtype != 1) {
+        //     logger("Validation failed: QTYPE=%u (only A records supported)", qtype);
+        //     verbose("Unsupported query type %u (only A records are supported)", qtype);
+        //     throw DnsParseErrorException(DnsRCodes::NOTIMP, "QTYPE");
+        // }
+        // logger("QTYPE validation passed (A record query)");
+        //
+        // logger("Validating QCLASS: expected=1 (IN), actual=%u", qclass);
+        // if(qclass != 1) {
+        //     logger("Validation failed: QCLASS=%u (only IN class supported)", qclass);
+        //     verbose("Unsupported query class %u (only Internet class is supported)", qclass);
+        //     throw DnsParseErrorException(DnsRCodes::NOTIMP, "QCLASS");
+        // }
+        // logger("QCLASS validation passed (Internet class)");
 
         const uint16_t opcode = DnsHeader::getOpcode(dnsHeader.mFlags);
         logger("Validating OPCODE: expected=0 (QUERY), actual=%u", opcode);

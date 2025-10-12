@@ -46,12 +46,12 @@ namespace FilteringDnsResolver::HostnameResolution
         verbose("Setting up upstream DNS resolver: %s", resolverHostname.c_str());
 
         // First we need to resolve the upstream DNS server address
-        logger("Step 1: Resolving upstream DNS server hostname");
+        logger("Resolving upstream DNS server hostname");
         addrinfo *resolvedAddressInfo = resolveHostname(resolverHostname);
         logger("Host resolution completed");
 
         // Then we need to copy the resolved address into a sockaddr_in structure
-        logger("Step 2: Creating sockaddr_in structure and validating resolved address");
+        logger("Creating sockaddr_in structure and validating resolved address");
         sockaddr_in resolverAddress{};
 
         if(resolvedAddressInfo && resolvedAddressInfo->ai_addr &&
@@ -85,7 +85,7 @@ namespace FilteringDnsResolver::HostnameResolution
                     );
         }
 
-        logger("Step 3: Freeing addrinfo structure");
+        logger("Freeing addrinfo structure");
         freeaddrinfo(resolvedAddressInfo);  // free the addrinfo structure after use
         logger("Resolver setup finished successfully");
 

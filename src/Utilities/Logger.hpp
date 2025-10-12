@@ -47,7 +47,7 @@
  *          provides the -v or --verbose command line argument.
  *          Default value is `false` (verbose mode disabled).
  */
-extern bool isVerboseSet;
+extern bool gIsVerboseSet;
 
 namespace FilteringDnsResolver::Utilities
 {
@@ -146,7 +146,7 @@ FilteringDnsResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, forma
  *          defined in `ColorEscapeSequences.hpp`. Verbose logging provides detailed
  *          information for debugging and troubleshooting purposes.
  *
- * @note The macro only outputs messages if the global variable `isVerboseSet`
+ * @note The macro only outputs messages if the global variable `gIsVerboseSet`
  *       is set to true (typically controlled by the -v command line argument).
  *       This allows runtime control of verbose output without recompilation.
  *
@@ -154,7 +154,7 @@ FilteringDnsResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, forma
  * @param ... Additional arguments for the format string.
  */
 #define verbose(format, ...) do { \
-if (isVerboseSet) { \
+if (gIsVerboseSet) { \
 FilteringDnsResolver::Utilities::Logger::log(__FILE__, __LINE__, __func__, format, FilteringDnsResolver::Constants::Color::CYAN, ##__VA_ARGS__); \
 } \
 } while(0)
