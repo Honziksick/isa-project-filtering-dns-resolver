@@ -116,9 +116,10 @@ namespace FilteringDnsResolver::Facades
          * @details Initializes client and server UDP sockets on the specified
          *          port for receiving DNS queries and forwarding responses.
          *
+         * @param resolverAddress Address of upstream DNS resolver (includes IP and port).
          * @param listenerPort Port number for DNS query listener socket.
          */
-        void setupUdpSockets(uint16_t listenerPort);
+        void setupUdpSockets(sockaddr_in resolverAddress, uint16_t listenerPort);
 
         /**
          * @brief Initializes the UDP finite state machine.

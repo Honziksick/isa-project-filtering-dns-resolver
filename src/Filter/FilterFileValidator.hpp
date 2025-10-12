@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      30.09.2025                                                    *
- * Last edit:    01.10.2025                                                    *
+ * Last edit:    11.10.2025                                                    *
  *                                                                             *
  * Description:  This header file provides `FilterFileValidator` class, which  *
  *               implements comprehensive domain name validation for filter    *
@@ -45,15 +45,21 @@ namespace FilteringDnsResolver::Filter
     class FilterFileValidator {
     protected:
         /**
-         * @brief Validates a single domain line against DNS standards.
+         * @brief Validates a single line (domain or wildcard pattern) from filter file.
          *
-         * @details Performs complete domain validation including length limits,
-         *          character set compliance, and label structure verification.
-         *          Throws exception if domain format violates DNS specifications.
+         * @details Performs comprehensive validation of domain name format
+         *          including length, character set, and label structure
+         *          according to DNS standards (RFC 1035). Supports wildcard
+         *          patterns starting with "*.".
          *
-         * @param line String view of domain line to validate.
+         * @param line Domain name or wildcard pattern to validate.
+         *
+         * @return `true` if it's an exact domain, `false` if it's a wildcard pattern.
+         *
+         * @throws InvalidFilterFileContentException If domain format is invalid.
          */
-        static void validateLine(std::string_view line);
+        [[nodiscard]]
+        static bool validateLine(std::string_view line);
 
     private:
         /**
@@ -65,6 +71,18 @@ namespace FilteringDnsResolver::Filter
          * @param domain String view of domain name to check.
          */
         static void validateDomainLength(std::string_view domain);
+
+        /**
+         * @brief Checks if the domain is a wildcard pattern.
+         *
+         * @details Determines if the provided domain string represents
+         *          a wildcard pattern by checking for the "*." prefix.
+         *
+         * @param domain String view of domain name to check.
+         *
+         * @return `true` if domain is a wildcard pattern, `false` otherwise.
+         */
+        static bool isWildcard(std::string_view domain);
 
         /**
          * @brief Validates domain character set compliance.

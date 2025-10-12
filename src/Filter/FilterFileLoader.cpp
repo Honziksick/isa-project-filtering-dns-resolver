@@ -43,7 +43,9 @@ using namespace std;
 
 namespace FilteringDnsResolver::Filter
 {
-    vector<string> FilterFileLoader::loadFilter(const string &filterFilePath) {
+    void FilterFileLoader::loadFilter(const string &filterFilePath,
+                                      vector<string> &exactDomains,
+                                      vector<string> &wildcardPatterns) {
         logger("FilterFileLoader::loadFilter() called with file path: '%s'", filterFilePath.c_str());
         verbose("Loading domain filter from file: %s", filterFilePath.c_str());
 
@@ -61,10 +63,10 @@ namespace FilteringDnsResolver::Filter
 
         logger("Filter file successfully opened: '%s'", filterFilePath.c_str());
 
-        vector<string> filterDomainList{};  // Store the raw lines from the file
         string line{};  // Temporary variable to hold each line
         size_t lineNumber = 0;
-        size_t processedLines = 0;
+        size_t processedExactDomains = 0;
+        size_t processedWildcards = 0;
         size_t skippedLines = 0;
 
         logger("Starting line-by-line processing of filter file");
@@ -76,32 +78,46 @@ namespace FilteringDnsResolver::Filter
 
             if(preprocessLine(line)) {
                 logger("Line %zu passed preprocessing: '%s'", lineNumber, line.c_str());
-                validateLine(line);
-                logger("Line %zu passed validation, adding to domain list", lineNumber);
-                filterDomainList.emplace_back(move(line));
-                processedLines++;
+
+                const bool isExactDomain = validateLine(line);
+                logger("Line %zu passed validation", lineNumber);
+
+                if(isExactDomain) {
+                    logger("Line %zu is exact domain, adding to exact domains list", lineNumber);
+                    exactDomains.emplace_back(move(line));
+                    processedExactDomains++;
+                } else {
+                    logger("Line %zu is wildcard pattern, adding to wildcards list", lineNumber);
+                    wildcardPatterns.emplace_back(move(line));
+                    processedWildcards++;
+                }
             }
             else {
-                logger("Line %zu skipped after preprocessing (empty/invalid)", lineNumber);
+                logger("Line %zu skipped after preprocessing (empty/comment/invalid)", lineNumber);
                 skippedLines++;
             }
         } // while
 
-        logger("File processing completed: %zu total lines, %zu processed, %zu skipped",
-               lineNumber, processedLines, skippedLines);
-        verbose("Processed %zu domains from filter file (%zu lines skipped)",
-                processedLines, skippedLines);
-
-        logger("Domain list size before deduplication: %zu entries", filterDomainList.size());
+        logger("File processing completed: %zu total lines, %zu exact domains, %zu wildcards, %zu skipped",
+               lineNumber, processedExactDomains, processedWildcards, skippedLines);
+        verbose("Processed %zu exact domains and %zu wildcard patterns (%zu lines skipped)",
+                processedExactDomains, processedWildcards, skippedLines);
 
         // We remove duplicate domains from the list to optimize filtering
-        deduplicateDomains(filterDomainList);
+        logger("Deduplicating exact domains (%zu entries)", exactDomains.size());
+        deduplicateDomains(exactDomains);
+        logger("Exact domains after deduplication: %zu entries", exactDomains.size());
 
-        logger("Domain list size after deduplication: %zu entries", filterDomainList.size());
+        logger("Deduplicating wildcard patterns (%zu entries)", wildcardPatterns.size());
+        deduplicateDomains(wildcardPatterns);
+        logger("Wildcard patterns after deduplication: %zu entries", wildcardPatterns.size());
+
+        const size_t totalEntries = exactDomains.size() + wildcardPatterns.size();
+        logger("Total entries after deduplication: %zu (%zu exact domains + %zu wildcards)",
+               totalEntries, exactDomains.size(), wildcardPatterns.size());
         logger("FilterFileLoader::loadFilter() completed successfully for file: '%s'", filterFilePath.c_str());
-        verbose("Filter loaded successfully: %zu unique domains ready for blocking", filterDomainList.size());
-
-        return filterDomainList;
+        verbose("Filter loaded: %zu exact domains and %zu wildcard patterns ready for blocking",
+                exactDomains.size(), wildcardPatterns.size());
     } // FilterFileLoader::loadFilter()
 
     void FilterFileLoader::deduplicateDomains(vector<string> &filterDomainList) {

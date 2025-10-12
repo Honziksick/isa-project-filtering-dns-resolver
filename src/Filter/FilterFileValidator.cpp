@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      30.09.2025                                                    *
- * Last edit:    01.10.2025                                                    *
+ * Last edit:    11.10.2025                                                    *
  *                                                                             *
  * Description:  This source file implements the `FilterFileValidator` class,  *
  *               which does comprehensive domain name validation for filter    *
@@ -38,26 +38,42 @@ using namespace std;
 
 namespace FilteringDnsResolver::Filter
 {
-    void FilterFileValidator::validateLine(const string_view line) {
+    bool FilterFileValidator::validateLine(const string_view line) {
         logger("FilterFileValidator::validateLine() called with domain: '%.*s' (length=%zu)",
                static_cast<int>(line.length()), line.data(), line.length());
 
+        // Check if it's a wildcard pattern (starts with "*.")
+        const bool isWildcardPattern = isWildcard(line);
+        const string_view domainToValidate = isWildcardPattern ? line.substr(2) : line;
+
+        if(isWildcardPattern) {
+            logger("Detected wildcard pattern, validating suffix: '%.*s'",
+                   static_cast<int>(domainToValidate.length()), domainToValidate.data());
+        }
+        else {
+            logger("Validating exact domain (not wildcard): '%.*s'",
+                   static_cast<int>(domainToValidate.length()), domainToValidate.data());
+        }
+
         // Validate overall domain length and allowed characters
-        logger("Step 1: Validating domain length");
-        validateDomainLength(line);
+        logger("Validating domain length");
+        validateDomainLength(domainToValidate);
         logger("Domain length validation passed");
 
-        logger("Step 2: Validating domain characters");
-        validateDomainCharacters(line);
+        logger("Validating domain characters");
+        validateDomainCharacters(domainToValidate);
         logger("Domain characters validation passed");
 
         // Split the domain into labels and validate each label
-        logger("Step 3: Splitting domain into labels and validating each");
-        splitByDotAndValidateLabels(line);
+        logger("Splitting domain into labels and validating each");
+        splitByDotAndValidateLabels(domainToValidate);
         logger("Label validation completed successfully");
 
-        logger("Domain validation completed for: '%.*s'",
-               static_cast<int>(line.length()), line.data());
+        logger("%s validation completed for: '%.*s' (length=%zu)",
+               isWildcardPattern ? "Wildcard" : "Domain",
+               static_cast<int>(line.length()), line.data(), line.length());
+
+        return !isWildcardPattern;  // true => exact domain, false => wildcard
     } // FilterFileValidator::validateLine
 
     void FilterFileValidator::validateDomainLength(const string_view domain) {
@@ -75,6 +91,10 @@ namespace FilteringDnsResolver::Filter
 
         logger("Domain length %zu is within valid range", domainLength);
     } // FilterFileValidator::validateDomainLength
+
+    bool FilterFileValidator::isWildcard(const string_view domain) {
+        return (domain.length() >= 2) && (domain[0] == '*') && (domain[1] == '.');
+    } // FilterFileValidator::isWildcard
 
     void FilterFileValidator::validateDomainCharacters(const string_view domain) {
         logger("FilterFileValidator::validateDomainCharacters() called for domain: '%.*s'",

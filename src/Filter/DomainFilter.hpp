@@ -59,9 +59,11 @@ namespace FilteringDnsResolver::Filter
          *          configuration file. Builds optimized hash set for fast
          *          domain matching during DNS query processing.
          *
-         * @param filterFileContent Vector of domain names from filter configuration.
+         * @param exactDomains Vector of exact domain names to filter (e.g., `example.com`).
+         * @param wildcardPatterns Vector of wildcard domain patterns (e.g., `*.example.com`).
          */
-        explicit DomainFilter(std::vector<std::string> filterFileContent);
+        explicit DomainFilter(std::vector<std::string> exactDomains,
+                              std::vector<std::string> wildcardPatterns);
 
         /**
          * @brief Checks if domain name matches any filtered domain.
@@ -108,9 +110,37 @@ namespace FilteringDnsResolver::Filter
 
         using DomainNameSet = std::unordered_set<std::string, StringHash, std::equal_to<>>;  /**< Hash set type for domain storage with transparent access */
 
-        DomainNameSet mDomainNameSet; /**< Hash set storing filtered domain names for fast lookup */
+        DomainNameSet mDomainNameSet; /**< Hash set storing filtered domain names for fast lookup   */
+        DomainNameSet mWildcardSet;   /**< Hash set storing wildcard domains for subdomain matching */
 
         static constexpr auto DOT{'.'}; /**< Domain separator character for subdomain processing */
+
+        /**
+         * @brief Checks for an exact domain hit in the filter.
+         *
+         * @details Performs a transparent hash lookup in the exact domain set without
+         *          allocating temporaries (heterogeneous access via `std::string_view`).
+         *          The input is expected to be a normalized, lower-case domain name.
+         *
+         * @param domainName Domain to test (e.g., `example.com`).
+         *
+         * @return `true` if the domain is present as an exact rule, `false` otherwise.
+         */
+        bool exactDomainMatches(std::string_view domainName) const;
+
+        /**
+         * @brief Checks wildcard/subdomain rules against the domain.
+         *
+         * @details Matches the domain by iteratively stripping the leftmost labels
+         *          separated by `.` and testing parent domains in the wildcard set
+         *          (e.g., `a.b.example.com` matches wildcard `*.example.com`).
+         *          Uses `std::string_view` slicing only; no allocations.
+         *
+         * @param domainName Domain to test (e.g., `a.b.example.com`).
+         *
+         * @return `true` if any parent domain is present in wildcard rules, `false` otherwise.
+         */
+        bool wildcardMatches(std::string_view domainName) const;
     }; // DomainFilter
 } // FilteringDnsResolver::Filter
 

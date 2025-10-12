@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      30.09.2025                                                    *
- * Last edit:    01.10.2025                                                    *
+ * Last edit:    11.10.2025                                                    *
  *                                                                             *
  * Description:  This header file provides `FilterFileLoader` class, which     *
  *               implements domain filter file loading and processing for      *
@@ -51,15 +51,21 @@ namespace FilteringDnsResolver::Filter
         /**
          * @brief Loads and processes domain filter from configuration file.
          *
-         * @details Reads the filter file, preprocesses content, validates
-         *          domain formats, and returns a cleaned list of unique
-         *          domain names ready for filter engine initialization.
+         * @details Reads domain names and wildcard patterns from the specified
+         *          file, validates each entry, removes duplicates, and populates
+         *          the provided vectors. Supports both exact domain matching
+         *          and wildcard patterns (*.example.com).
          *
-         * @param filterFilePath Path to the domain filter configuration file.
+         * @param filterFilePath Path to the filter file containing domain names and wildcard patterns.
+         * @param exactDomains Vector to be populated with exact domain names.
+         * @param wildcardPatterns Vector to be populated with wildcard patterns.
          *
-         * @return Vector of validated and deduplicated domain names.
+         * @throws InvalidArgumentException If file cannot be opened or read.
+         * @throws InvalidFilterFileContentException If domain format is invalid.
          */
-        static std::vector<std::string> loadFilter(const std::string &filterFilePath);
+        static void loadFilter(const std::string &filterFilePath,
+                               std::vector<std::string> &exactDomains,
+                               std::vector<std::string> &wildcardPatterns);
 
     private:
         /**

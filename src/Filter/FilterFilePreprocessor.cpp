@@ -43,7 +43,7 @@ namespace FilteringDnsResolver::Filter
         logger("FilterFilePreprocessor::preprocessLine() called with line: '%s' (length=%zu)",
                originalLine.c_str(), originalLine.length());
 
-        logger("Step 1: Trimming whitespace from line");
+        logger("Trimming whitespace from line");
         StringUtils::trimWhitespace(line);
         if(line != originalLine) {
             logger("Whitespace trimmed: '%s' -> '%s'", originalLine.c_str(), line.c_str());
@@ -52,7 +52,7 @@ namespace FilteringDnsResolver::Filter
             logger("No whitespace to trim");
         }
 
-        logger("Step 2: Checking if line is blank or comment");
+        logger("Checking if line is blank or comment");
         if(isBlankLine(line)) {
             logger("Line is blank after trimming - rejecting");
             return false;
@@ -63,7 +63,7 @@ namespace FilteringDnsResolver::Filter
         }
         logger("Line passed blank/comment check");
 
-        logger("Step 3: Trimming trailing dot");
+        logger("Trimming trailing dot");
         const bool hadTrailingDot = !line.empty() && line.back() == '.';
         trimTrailingDot(line);
         if(hadTrailingDot) {
@@ -73,7 +73,7 @@ namespace FilteringDnsResolver::Filter
             logger("No trailing dot to remove");
         }
 
-        logger("Step 4: Converting to lowercase");
+        logger("Converting to lowercase");
         const string beforeLowercase = line;
         StringUtils::toLower(line);
         if(line != beforeLowercase) {

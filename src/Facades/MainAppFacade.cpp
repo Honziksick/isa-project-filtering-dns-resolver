@@ -36,10 +36,11 @@
 #include "Utilities/ExceptionHandler.hpp"
 #include "Utilities/Logger.hpp"
 #include <exception>  // std::exception
+#include <netdb.h>    // sockaddr_in
 #include <string>     // std::string
 #include <memory>     // std::make_unique
 
-bool isVerboseSet = false;
+bool gIsVerboseSet = false;
 
 using namespace FilteringDnsResolver::Arguments;
 using namespace FilteringDnsResolver::HostnameResolution;
@@ -56,7 +57,7 @@ namespace FilteringDnsResolver::Facades
             getCommandLineOptions(argc, argv);
 
             // Set the global verbose flag
-            isVerboseSet = mCommandLineOptions.mVerbose;
+            gIsVerboseSet = mCommandLineOptions.mVerbose;
 
             // After we create the domain filter instance
             buildDomainFilter(mCommandLineOptions.mFilterFilePath);
@@ -65,7 +66,7 @@ namespace FilteringDnsResolver::Facades
             getResolverAddress(mCommandLineOptions.mResolverHostname);
 
             // Then we set up UDP sockets for listening and sending DNS queries
-            setupUdpSockets(mCommandLineOptions.mListenPort);
+            setupUdpSockets(mResolverAddress, mCommandLineOptions.mListenPort);
 
             // After that we set up the UDP FSM
             setupUdpFsm();
@@ -92,13 +93,16 @@ namespace FilteringDnsResolver::Facades
 
     void MainAppFacade::buildDomainFilter(const string &filterFilePath) {
         logger("Building domain filter...");
-        mDomainFilterPtr = make_unique<DomainFilter>(FilterFileLoader::loadFilter(filterFilePath));
+        vector<string> exactDomains{};
+        vector<string> wildcardPatterns{};
+        FilterFileLoader::loadFilter(filterFilePath, exactDomains, wildcardPatterns);
+        mDomainFilterPtr = make_unique<DomainFilter>(move(exactDomains), move(wildcardPatterns));
         logger("Domain filter built successfully");
     } // MainAppFacade::buildDomainFilter
 
-    void MainAppFacade::setupUdpSockets(const uint16_t listenerPort) {
+    void MainAppFacade::setupUdpSockets(const sockaddr_in resolverAddress, const uint16_t listenerPort) {
         logger("Setting up UDP sockets...");
-        mUdpSocketsPtr = UdpSockets::openUdpSockets(listenerPort);
+        mUdpSocketsPtr = UdpSockets::openUdpSockets(resolverAddress, listenerPort);
         logger("UDP sockets set up successful");
     } // MainAppFacade::setupUdpSockets
 
