@@ -95,9 +95,10 @@ namespace FilteringDnsResolver::DnsUtils
          * @param pMessageBuffer Original query message buffer.
          * @param messageLength Length of the original message.
          * @param clientAddress Client address to send the error response to.
+         * @param dnsQuery Parsed query object for response construction.
          */
         void sendNotImpMessage(const uint8_t *pMessageBuffer, size_t messageLength,
-                               const sockaddr_in &clientAddress) const;
+                               const sockaddr_in &clientAddress, const DnsQuery &dnsQuery = {}) const;
 
         /**
          * @brief Sends a FORMERR error response to the client.

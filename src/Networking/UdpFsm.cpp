@@ -58,8 +58,7 @@ using namespace FilteringDnsResolver::Exceptions;
 using namespace FilteringDnsResolver::Utilities;
 using namespace std;
 
-namespace FilteringDnsResolver::Networking
-{
+namespace FilteringDnsResolver::Networking {
     UdpFsm::UdpFsm(unique_ptr<UdpSockets> socketFds, unique_ptr<DomainFilter> domainFilter)
         : mSocketFds{move(socketFds)},
           mDomainFilterPtr{move(domainFilter)},
@@ -102,101 +101,132 @@ namespace FilteringDnsResolver::Networking
             if(eventCount > 0) {
                 logger("Poll returned %d active events", eventCount);
 
-                // Check if a new datagram has arrived from a client
-                if(fdWatcher[POLL_LISTENER_INDEX].revents & POLLIN) {
-                    logger("Client query received on listener socket");
-
-                    sockaddr_in clientAddress{};
-                    socklen_t clientAddressLength{sizeof(clientAddress)};
-                    const ssize_t bytesReceived = recvfrom(mSocketFds->getListenerSocketFd(),
-                                                           buffer.data(), buffer.size(), 0,
-                                                           reinterpret_cast<sockaddr*>(&clientAddress),
-                                                           &clientAddressLength); // we act as UDP server
-
-                    // If the recvfrom() function returns an error
-                    if(bytesReceived < 0) {
-                        logger("ERROR: recvfrom() failed with errno=%d: %s", errno, strerror(errno));
-
-                        if(errno == EAGAIN || errno == EWOULDBLOCK) {
-                            logger("recvfrom() returned EAGAIN/EWOULDBLOCK: datagram too large");
-                            throw ProtocolErrorException("UDP datagram exceeds maximum size.");
-                        }
-                        else {
-                            throw ConnectionErrorException(
-                                    "Failed to receive data from the server due "
-                                    "to recvfrom() error: " + string(strerror(errno))
-                                    );
-                        }
-                    }
-                    // If the recvfrom() function returns 0, it means the connection has been closed
-                    if(bytesReceived == 0) {
-                        logger("recvfrom() returned 0: connection closed");
-                        throw ConnectionErrorException("Connection closed by server. No data received.");
-                    }
-
-                    logger("Received %zd bytes from client %s:%d", bytesReceived,
-                           inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
-
-                    // We process the received datagram
-                    try {
-                        onClientDatagram(buffer.data(), static_cast<size_t>(bytesReceived), clientAddress);
-                    }
-                    catch(const BaseCustomException<ExitCodes> &e) {
-                        logger("onClientDatagram() exception: %s", e.what());
-                        try {
-                            mMessengerPtr->sendServFailMessage(buffer.data(), static_cast<size_t>(bytesReceived), clientAddress);
-                        }
-                        catch(...) {
-                            // TODO: what behavior here?
-                            logger("Failed to send SERVFAIL response to client");
-                        }
-                    }
-                    catch(...) {
-                        logger("onClientDatagram() unknown exception");
-                        try {
-                            mMessengerPtr->sendServFailMessage(buffer.data(), static_cast<size_t>(bytesReceived), clientAddress);
-                        }
-                        catch(...) {
-                            // TODO: what behavior here?
-                            logger("Failed to send SERVFAIL response to client");
-                        }
-                    }
-                } // if(listener POLLIN)
-
                 // Check if answer has arrived from the resolver
                 if(fdWatcher[POLL_RESOLVER_INDEX].revents & POLLIN) {
-                    logger("Response received from upstream resolver");
+                    logger("Processing resolver responses (max %d packets)", MAX_RESOLVER_PACKETS_PER_ITERATION);
 
-                    const ssize_t bytesReceived = recv(mSocketFds->getResolverSocketFd(),
-                                                       buffer.data(), buffer.size(), 0); // we act as UDP client
+                    int packetsProcessed{0};
+                    while(packetsProcessed < MAX_RESOLVER_PACKETS_PER_ITERATION) {
+                        const ssize_t bytesReceived = recv(mSocketFds->getResolverSocketFd(),
+                                                           buffer.data(), buffer.size(), MSG_DONTWAIT); // we act as UDP client
 
-                    // If the recv() function returns an error
-                    if(bytesReceived < 0) {
-                        logger("ERROR: recv() from resolver failed with errno=%d: %s", errno, strerror(errno));
-                        throw ConnectionErrorException(
-                                "Failed to receive data from the server due "
-                                "to recv() error: " + string(strerror(errno))
-                                );
-                    }
-                    // If the recv() function returns 0, it means the connection has been closed
-                    if(bytesReceived == 0) {
-                        logger("recv() returned 0: resolver connection closed");
-                        throw ConnectionErrorException("Connection closed by server. No data received.");
-                    }
+                        // If the recv() function returns an error
+                        if(bytesReceived < 0) {
+                            if(errno == EAGAIN || errno == EWOULDBLOCK) {
+                                logger("Resolver buffer drained after %d packets", packetsProcessed);
+                                break;  // No more data
+                            }
+                            else {
+                                logger("ERROR: recv() from resolver failed with errno=%d: %s",
+                                       errno, strerror(errno));
+                                throw ConnectionErrorException(
+                                        "Failed to receive data from the server due "
+                                        "to recv() error: " + string(strerror(errno))
+                                        );
+                            }
+                        }
+                        // If the recv() function returns 0, it means the connection has been closed
+                        if(bytesReceived == 0) {
+                            logger("recv() returned 0: resolver connection closed");
+                            throw ConnectionErrorException("Connection closed by server. No data received.");
+                        }
 
-                    logger("Received %zd bytes from upstream resolver", bytesReceived);
+                        logger("Received %zd bytes from upstream resolver (packet %d/%d)",
+                               bytesReceived, packetsProcessed + 1, MAX_RESOLVER_PACKETS_PER_ITERATION);
 
-                    try {
-                        onResolverDatagram(buffer.data(), static_cast<size_t>(bytesReceived));
-                    }
-                    catch(const BaseCustomException<ExitCodes> &e) {
-                        logger("onResolverDatagram() exception: %s", e.what());
-                    }
-                    catch(...) {
-                        logger("onResolverDatagram() unknown exception");
-                        // TODO: what behavior here?
+                        try {
+                            onResolverDatagram(buffer.data(), static_cast<size_t>(bytesReceived));
+                            packetsProcessed++;
+                        }
+                        catch(const BaseCustomException<ExitCodes> &e) {
+                            logger("onResolverDatagram() exception: %s", e.what());
+                            packetsProcessed++;  // failed packet still counts
+                        }
+                        catch(...) {
+                            logger("onResolverDatagram() unknown exception");
+                            packetsProcessed++;
+                            // TODO: what behavior here?
+                        }
+                    } // while(packetsProcessed < MAX_RESOLVER_PACKETS_PER_ITERATION)
+
+                    if(packetsProcessed >= MAX_RESOLVER_PACKETS_PER_ITERATION) {
+                        logger("NOTICE: Resolver batch limit reached (%d packets), "
+                               "more data may be pending", packetsProcessed);
                     }
                 } // if(resolver POLLIN)
+
+                // Check if a new datagram has arrived from a client
+                if(fdWatcher[POLL_LISTENER_INDEX].revents & POLLIN) {
+                    logger("Processing client queries (max %d packets)", MAX_CLIENT_PACKETS_PER_ITERATION);
+
+                    int packetsProcessed = 0;
+                    while(packetsProcessed < MAX_CLIENT_PACKETS_PER_ITERATION) {
+                        sockaddr_in clientAddress{};
+                        socklen_t clientAddressLength{sizeof(clientAddress)};
+                        const ssize_t bytesReceived = recvfrom(mSocketFds->getListenerSocketFd(),
+                                                               buffer.data(), buffer.size(), MSG_DONTWAIT,
+                                                               reinterpret_cast<sockaddr*>(&clientAddress),
+                                                               &clientAddressLength); // we act as UDP server
+
+                        // If the recvfrom() function returns an error
+                        if(bytesReceived < 0) {
+                            if(errno == EAGAIN || errno == EWOULDBLOCK) {
+                                logger("Client buffer drained after %d packets", packetsProcessed);
+                                break;  // No more data
+                            }
+                            else {
+                                logger("ERROR: recvfrom() failed with errno=%d: %s", errno, strerror(errno));
+                                throw ProtocolErrorException("UDP datagram exceeds maximum size.");
+                            }
+                        }
+                        // If the recvfrom() function returns 0, it means the connection has been closed
+                        if(bytesReceived == 0) {
+                            logger("recvfrom() returned 0: connection closed");
+                            throw ConnectionErrorException("Connection closed by server. No data received.");
+                        }
+
+                        logger("Received %zd bytes from client %s:%d (packet %d/%d)", bytesReceived,
+                               inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port),
+                               packetsProcessed + 1, MAX_CLIENT_PACKETS_PER_ITERATION);
+
+                        // We process the received datagram
+                        try {
+                            onClientDatagram(buffer.data(), static_cast<size_t>(bytesReceived), clientAddress);
+                            packetsProcessed++;
+                        }
+                        catch(const BaseCustomException<ExitCodes> &e) {
+                            logger("onClientDatagram() exception: %s", e.what());
+                            try {
+                                mMessengerPtr->sendServFailMessage(buffer.data(),
+                                                                   static_cast<size_t>(bytesReceived),
+                                                                   clientAddress);
+                            }
+                            catch(...) {
+                                // TODO: what behavior here?
+                                logger("Failed to send SERVFAIL response to client");
+                            }
+                            packetsProcessed++; // failed packet still counts
+                        }
+                        catch(...) {
+                            logger("onClientDatagram() unknown exception");
+                            try {
+                                mMessengerPtr->sendServFailMessage(buffer.data(),
+                                                                   static_cast<size_t>(bytesReceived),
+                                                                   clientAddress);
+                            }
+                            catch(...) {
+                                // TODO: what behavior here?
+                                logger("Failed to send SERVFAIL response to client");
+                            }
+                            packetsProcessed++;
+                        }
+                    } // while(packetsProcessed < MAX_CLIENT_PACKETS_PER_ITERATION)
+
+                    if(packetsProcessed >= MAX_CLIENT_PACKETS_PER_ITERATION) {
+                        logger("WARNING: Client batch limit reached (%d packets), "
+                               "more data may be pending", packetsProcessed);
+                    }
+                } // if(listener POLLIN)
             } // if(pollEvents() > 0)
 
             // Lastly, we perform maintenance tasks
@@ -251,37 +281,66 @@ namespace FilteringDnsResolver::Networking
 
         // We parse and validate the DNS query
         DnsQuery dnsQuery{};
+        auto dnsRCode{DnsRCodes::NOERROR};
+
         try {
             dnsQuery = DnsMessageParser::parseAndValidate(messageBuffer, messageLength);
             logger("DNS query parsed successfully: domain='%s'", dnsQuery.mQName.c_str());
         }
         catch(const DnsParseErrorException &e) {
             logger("DNS parse error (code=%d): %s", e.code(), e.what());
-
-            switch(e.code()) {
-                // The query is malformed
-                case CastUtils::castEnumToInt(DnsRCodes::FORMERR):
-                    mMessengerPtr->sendFormErrMessage(messageBuffer, messageLength, clientAddress);
-                    return;
-                // The query is well-formed but contains unsupported features
-                case CastUtils::castEnumToInt(DnsRCodes::NOTIMP):
-                    mMessengerPtr->sendNotImpMessage(messageBuffer, messageLength, clientAddress);
-                    return;
-                // Other parsing errors
-                default:
-                    mMessengerPtr->sendServFailMessage(messageBuffer, messageLength, clientAddress);
-                    return;
-            } // switch
+            dnsRCode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
         } // catch
 
         // The query is valid, we check if the domain is blocked
         if(mDomainFilterPtr->domainMatches(dnsQuery.mQName)) {
-            logger("Domain '%s' is blocked by filter", dnsQuery.mQName.c_str());
+            logger("Domain '%s' is BLOCKED -> sending REFUSED (qtype=%u, qclass=%u)",
+                   dnsQuery.mQName.c_str(), dnsQuery.mQType, dnsQuery.mQClass);
             verbose("Blocked query for domain: %s", dnsQuery.mQName.c_str());
             mMessengerPtr->sendRefusedMessage(messageBuffer, messageLength, clientAddress, dnsQuery);
             return;
         }
+
+        // If there was a parsing error, we respond accordingly
+        switch(dnsRCode) {
+            // No error, we can proceed
+            case DnsRCodes::NOERROR:
+                break;
+            // The query is malformed
+            case DnsRCodes::FORMERR:
+                mMessengerPtr->sendFormErrMessage(messageBuffer, messageLength, clientAddress);
+                break;
+            // The query is well-formed but contains unsupported features
+            case DnsRCodes::NOTIMP:
+                mMessengerPtr->sendNotImpMessage(messageBuffer, messageLength, clientAddress);
+                break;
+            // Other parsing errors
+            default:
+                mMessengerPtr->sendServFailMessage(messageBuffer, messageLength, clientAddress);
+                return;
+        } // switch
+
+        // Only A IN queries (QTYPE=1, QCLASS=1) are allowed
+        logger("Validating QCLASS: expected=1 (IN), actual=%u", dnsQuery.mQClass);
+        if(dnsQuery.mQClass != 1) {
+            logger("Validation failed: QCLASS=%u (only IN class supported)", dnsQuery.mQClass);
+            verbose("Unsupported query class %u - rejecting with NOTIMP", dnsQuery.mQClass);
+            mMessengerPtr->sendNotImpMessage(messageBuffer, messageLength, clientAddress, dnsQuery);
+            return; // we musn't forward unsupported class
+        }
+        logger("QCLASS validation passed (Internet class)");
+
+        logger("Validating QTYPE: expected=1 (A record), actual=%u", dnsQuery.mQType);
+        if(dnsQuery.mQType != 1) {
+            logger("Validation failed: QTYPE=%u (only A records supported)", dnsQuery.mQType);
+            verbose("Unsupported query type %u - still going to forward it", dnsQuery.mQType);
+        }
+        else {
+            logger("QTYPE validation passed (A record query)");
+        }
+
         logger("Domain '%s' allowed, forwarding to upstream resolver", dnsQuery.mQName.c_str());
+        verbose("Forwarding query for allowed domain: %s", dnsQuery.mQName.c_str());
 
         // We forward the query to the resolver, if the domain is not blocked
         mForwarderPtr->forwardQueryToResolver(messageBuffer, messageLength, clientAddress);
@@ -309,12 +368,17 @@ namespace FilteringDnsResolver::Networking
 
         // Check if it's time for maintenance
         if(now < mNextMaintenanceTimestamp) {
+            logger("Skipping maintenance: next scheduled at %lld ms from now",
+                   chrono::duration_cast<chrono::milliseconds>(mNextMaintenanceTimestamp - now).count());
             return;
         }
 
         // Maintenance tasks - delete old transactions and set next maintenance timestamp
         mForwarderPtr->deleteOldTransactions();
         mNextMaintenanceTimestamp = now + MAINTENANCE_INTERVAL;
+
+        logger("Maintenance completed: next scheduled at %lld ms from now",
+               chrono::duration_cast<chrono::milliseconds>(mNextMaintenanceTimestamp - now).count());
     } // UdpFsm::transactionsMaintenance
 } // FilteringDnsResolver::Networking
 

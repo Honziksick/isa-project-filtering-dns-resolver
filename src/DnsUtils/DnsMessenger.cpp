@@ -193,13 +193,14 @@ namespace FilteringDnsResolver::DnsUtils
 
     void DnsMessenger::sendNotImpMessage(const uint8_t *pMessageBuffer,
                                          const size_t messageLength,
-                                         const sockaddr_in &clientAddress) const {
+                                         const sockaddr_in &clientAddress,
+                                         const DnsQuery &dnsQuery) const {
         logger("DnsMessenger::sendNotImpMessage() called for client %s:%u",
                inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
         verbose("Sending NOT IMPLEMENTED response to %s:%u - unsupported operation",
                 inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port));
 
-        const auto message = buildErrorReply(pMessageBuffer, messageLength, DnsRCodes::NOTIMP);
+        const auto message = buildErrorReply(pMessageBuffer, messageLength, DnsRCodes::NOTIMP, dnsQuery);
         sendDnsReply(message, clientAddress);
 
         logger("NOTIMP message sent successfully");
