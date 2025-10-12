@@ -100,7 +100,7 @@ namespace FilteringDnsResolver::Filter
         logger("FilterFileValidator::validateDomainCharacters() called for domain: '%.*s'",
                static_cast<int>(domain.length()), domain.data());
 
-        size_t characterIndex = 0;
+        size_t characterIndex{1};
         for(const char character : domain) {
             if(!isalnum(static_cast<unsigned char>(character)) &&
                 character != '-' && character != '.') {

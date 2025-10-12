@@ -79,8 +79,17 @@ namespace FilteringDnsResolver::Filter
             if(preprocessLine(line)) {
                 logger("Line %zu passed preprocessing: '%s'", lineNumber, line.c_str());
 
-                const bool isExactDomain = validateLine(line);
-                logger("Line %zu passed validation", lineNumber);
+                bool isExactDomain{};
+                try {
+                    isExactDomain = validateLine(line);
+                    logger("Line %zu '%s' passed validation", lineNumber, line.c_str());
+                }
+                catch(const InvalidFilterFileContentException &e) {
+                    logger("Line %zu '%s' failed validation: %s", lineNumber, line.c_str(), e.detail().c_str());
+                    verbose("Line %zu skipped: validation failed for '%s' (%s)", lineNumber, line.c_str(), e.detail().c_str());
+                    skippedLines++;
+                    continue;  // Skip invalid lines
+                }
 
                 if(isExactDomain) {
                     logger("Line %zu is exact domain, adding to exact domains list", lineNumber);
