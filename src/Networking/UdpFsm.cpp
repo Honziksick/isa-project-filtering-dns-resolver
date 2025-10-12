@@ -284,7 +284,7 @@ namespace FilteringDnsResolver::Networking {
         auto dnsRCode{DnsRCodes::NOERROR};
 
         try {
-            dnsQuery = DnsMessageParser::parseAndValidate(messageBuffer, messageLength);
+            DnsMessageParser::parseAndValidate(messageBuffer, messageLength, dnsQuery);
             logger("DNS query parsed successfully: domain='%s'", dnsQuery.mQName.c_str());
         }
         catch(const DnsParseErrorException &e) {
@@ -305,17 +305,21 @@ namespace FilteringDnsResolver::Networking {
         switch(dnsRCode) {
             // No error, we can proceed
             case DnsRCodes::NOERROR:
+                logger("No DNS parsing errors detected, proceeding with query processing");
                 break;
             // The query is malformed
             case DnsRCodes::FORMERR:
+                logger("Validation failed: malformed DNS query");
                 mMessengerPtr->sendFormErrMessage(messageBuffer, messageLength, clientAddress);
-                break;
+                return;
             // The query is well-formed but contains unsupported features
             case DnsRCodes::NOTIMP:
+                logger("Validation failed: unsupported DNS query features");
                 mMessengerPtr->sendNotImpMessage(messageBuffer, messageLength, clientAddress);
-                break;
+                return;
             // Other parsing errors
             default:
+                logger("Validation failed: DNS parsing error with RCODE=%s", CastUtils::castEnumToString<DnsRCodes>(dnsRCode).c_str());
                 mMessengerPtr->sendServFailMessage(messageBuffer, messageLength, clientAddress);
                 return;
         } // switch

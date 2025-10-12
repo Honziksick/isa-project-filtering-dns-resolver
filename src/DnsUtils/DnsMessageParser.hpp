@@ -56,14 +56,13 @@ namespace FilteringDnsResolver::DnsUtils
          *
          * @param pMessageBuffer Pointer to the raw DNS message buffer.
          * @param messageBufferLength Length of the message buffer in bytes.
-         *
-         * @return A validated `DnsQuery` object containing all parsed components.
+         * @param outQuery Reference to `DnsQuery` object to populate with parsed data.
          *
          * @throws DnsParseErrorException If message is malformed, incomplete, or
          *                                violates DNS protocol rules with specific
          *                                RCODE and component information.
          */
-        static DnsQuery parseAndValidate(const uint8_t *pMessageBuffer, size_t messageBufferLength);
+        static void parseAndValidate(const uint8_t *pMessageBuffer, size_t messageBufferLength, DnsQuery &outQuery);
 
     private:
         /**

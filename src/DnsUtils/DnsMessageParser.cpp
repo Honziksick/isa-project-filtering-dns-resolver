@@ -26,11 +26,13 @@
  */
 
 #include "DnsUtils/DnsMessageParser.hpp"
+#include "DnsUtils/DomainValidators.hpp"
 #include "DnsUtils/DnsHeader.hpp"
 #include "DnsUtils/DnsQuery.hpp"
 #include "Enums/DnsRCodes.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Utilities/StringUtils.hpp"
+#include "Utilities/CastUtils.hpp"
 #include "Utilities/Logger.hpp"
 #include <cstdint>  // uint8_t, uint16_t
 #include <utility>  // std::move
@@ -43,14 +45,22 @@ using namespace std;
 
 namespace FilteringDnsResolver::DnsUtils
 {
-    DnsQuery DnsMessageParser::parseAndValidate(const uint8_t *pMessageBuffer,
-                                                const size_t messageBufferLength) {
+    void DnsMessageParser::parseAndValidate(const uint8_t *pMessageBuffer,
+                                                const size_t messageBufferLength,
+                                                DnsQuery &outQuery) {
         logger("DnsMessageParser::parseAndValidate() called with buffer=%p, length=%zu bytes",
                static_cast<const void*>(pMessageBuffer), messageBufferLength);
         verbose("Parsing incoming DNS query message (%zu bytes)", messageBufferLength);
 
-        // First we parse the DNS message header
+        // Preparation of variables to hold parsed data
         DnsHeader dnsHeader{};
+        string qname{};
+        uint16_t qtype{0};
+        uint16_t qclass{0};
+        auto rcode{DnsRCodes::NOERROR};
+        string errorDetail{};
+
+        // First we parse the DNS message header
         logger("Attempting to parse DNS header from buffer");
         if(!parseHeader(pMessageBuffer, messageBufferLength, dnsHeader)) {
             logger("DNS header parsing failed - throwing FORMERR for HEADER");
@@ -66,32 +76,73 @@ namespace FilteringDnsResolver::DnsUtils
                offset, DnsQuery::HEADER_TRUE_SIZE);
 
         // Then we parse the domain name (QNAME) label by label
-        string qname{};
         if(!parseQName(pMessageBuffer, messageBufferLength, offset, qname)) {
             logger("QNAME parsing failed at offset %zu - throwing FORMERR", offset);
             verbose("DNS query domain name is malformed");
-            throw DnsParseErrorException(DnsRCodes::FORMERR, "QNAME");  // If QNAME is malformed
+
+            if(rcode == DnsRCodes::NOERROR) {
+                rcode = DnsRCodes::FORMERR;
+                errorDetail = "QNAME";
+            }
         }
         logger("QNAME successfully parsed: '%s', final offset=%zu", qname.c_str(), offset);
         verbose("Parsed domain name: %s", qname.c_str());
 
         // After QNAME, we parse QTYPE and QCLASS
         logger("Parsing QTYPE at offset %zu", offset);
-        const uint16_t qtype = parseQType(pMessageBuffer, messageBufferLength, offset);
+        try {
+            qtype = parseQType(pMessageBuffer, messageBufferLength, offset);
+        }
+        catch(const DnsParseErrorException &e) {
+            logger("QTYPE parsing failed at offset %zu", offset);
+            if(rcode == DnsRCodes::NOERROR) {
+                rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
+                errorDetail = e.detail();
+            }
+        }
         logger("QTYPE parsed: %u, new offset=%zu", qtype, offset);
 
         logger("Parsing QCLASS at offset %zu", offset);
-        const uint16_t qclass = parseQClass(pMessageBuffer, messageBufferLength, offset);
+        try {
+            qclass = parseQClass(pMessageBuffer, messageBufferLength, offset);
+        }
+        catch(const DnsParseErrorException &e) {
+            logger("QCLASS parsing failed at offset %zu", offset);
+            if(rcode == DnsRCodes::NOERROR) {
+                rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
+                errorDetail = e.detail();
+            }
+        }
         logger("QCLASS parsed: %u, final offset=%zu", qclass, offset);
 
         // Last, we validate the parts of the parsed query
         logger("Starting DNS query validation");
-        validateDnsQuery(dnsHeader, qtype, qclass);
+        try {
+            if(rcode != DnsRCodes::NOERROR) {
+                logger("Previous parsing errors detected, validation will be skipped");
+            }
+
+            validateDnsQuery(dnsHeader, qtype, qclass);
+        }
+        catch(const DnsParseErrorException &e) {
+            logger("DNS query validation failed: %s", e.detail().c_str());
+            if(rcode == DnsRCodes::NOERROR) {
+                rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
+                errorDetail = e.detail();
+            }
+        }
+
         logger("DNS query validation completed successfully");
         verbose("DNS query validation passed - query type %u, class %u", qtype, qclass);
 
         logger("Creating DnsQuery object with parsed data");
-        return DnsQuery{dnsHeader, offset, move(qname), qtype, qclass};
+        outQuery = DnsQuery{dnsHeader, offset, move(qname), qtype, qclass};
+
+        if(rcode != DnsRCodes::NOERROR) {
+            logger("Errors detected during parsing/validation - throwing exception with RCODE=%d (%s)",
+                   CastUtils::castEnumToInt(rcode), CastUtils::castEnumToString<DnsRCodes>(rcode).c_str());
+            throw DnsParseErrorException(rcode, errorDetail);
+        }
     } // DnsMessageParser::parseAndValidate
 
     bool DnsMessageParser::parseHeader(const uint8_t *pMessageBuffer,
@@ -200,6 +251,57 @@ namespace FilteringDnsResolver::DnsUtils
         // Conversion to lowercase for case-insensitive comparison
         StringUtils::toLower(outQName);
 
+        // Remove trailing dot if present (just in case)
+        bool hadTrailingDot{false};
+        if(!outQName.empty() && outQName.back() == '.') {
+            outQName.pop_back();
+            hadTrailingDot = true;
+            logger("Trailing dot removed from QNAME");
+        }
+
+        // Validate overall QName length and allowed characters
+        try {
+            logger("Validating QName length");
+            DomainValidators::validateDomainLength(outQName, true);
+            logger("QName length validation passed");
+
+            logger("Validating QName characters");
+            DomainValidators::validateDomainCharacters(outQName, true);
+            logger("QName characters validation passed");
+
+            // Split the QName into labels and validate each label
+            logger("Splitting QName into labels and validating each");
+            DomainValidators::splitByDotAndValidateLabels(outQName, true);
+            logger("Label validation completed successfully");
+
+            // If we removed a trailing dot, we can add it back for error reporting
+            if(hadTrailingDot) {
+                outQName.push_back('.');
+                logger("Restored trailing dot to QNAME for error reporting");
+            }
+        }
+        catch(const DnsParseErrorException &e) {
+            logger("QName validation failed: %s", e.detail().c_str());
+
+            // If we removed a trailing dot, we can add it back for error reporting
+            if(hadTrailingDot) {
+                outQName.push_back('.');
+                logger("Restored trailing dot to QNAME for error reporting");
+            }
+
+            return false;
+        }
+        catch(const exception &e) {
+            logger("Unexpected error during QName validation: %s", e.what());
+
+            // If we removed a trailing dot, we can add it back for error reporting
+            if(hadTrailingDot) {
+                outQName.push_back('.');
+                logger("Restored trailing dot to QNAME for error reporting");
+            }
+            throw;  // Re-throw unexpected exceptions
+        }
+
         logger("QNAME parsing completed: '%s' (%zu labels, %zu total bytes processed)",
                outQName.c_str(), labelCount, currentOffset - startOffset);
 
@@ -291,23 +393,6 @@ namespace FilteringDnsResolver::DnsUtils
             throw DnsParseErrorException(DnsRCodes::FORMERR, "QDCOUNT");
         }
         logger("QDCOUNT validation passed");
-
-        // Only A IN queries (QTYPE=1, QCLASS=1) are allowed
-        // logger("Validating QTYPE: expected=1 (A record), actual=%u", qtype);
-        // if(qtype != 1) {
-        //     logger("Validation failed: QTYPE=%u (only A records supported)", qtype);
-        //     verbose("Unsupported query type %u (only A records are supported)", qtype);
-        //     throw DnsParseErrorException(DnsRCodes::NOTIMP, "QTYPE");
-        // }
-        // logger("QTYPE validation passed (A record query)");
-        //
-        // logger("Validating QCLASS: expected=1 (IN), actual=%u", qclass);
-        // if(qclass != 1) {
-        //     logger("Validation failed: QCLASS=%u (only IN class supported)", qclass);
-        //     verbose("Unsupported query class %u (only Internet class is supported)", qclass);
-        //     throw DnsParseErrorException(DnsRCodes::NOTIMP, "QCLASS");
-        // }
-        // logger("QCLASS validation passed (Internet class)");
 
         const uint16_t opcode = DnsHeader::getOpcode(dnsHeader.mFlags);
         logger("Validating OPCODE: expected=0 (QUERY), actual=%u", opcode);
