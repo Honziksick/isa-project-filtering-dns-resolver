@@ -141,6 +141,16 @@ namespace FilteringDnsResolver::Filter
          * @return `true` if any parent domain is present in wildcard rules, `false` otherwise.
          */
         bool wildcardMatches(std::string_view domainName) const;
+
+        /**
+         * @brief Removes trailing dot from domain if present.
+         *
+         * @details Normalizes the domain by stripping a trailing dot (`.`)
+         *          if it exists, to ensure consistent matching behavior.
+         *
+         * @param domain Domain string view to normalize (may be modified).
+         */
+        static void removeTrailingDot(std::string_view &domain);
     }; // DomainFilter
 } // FilteringDnsResolver::Filter
 

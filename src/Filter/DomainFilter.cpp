@@ -93,9 +93,12 @@ namespace FilteringDnsResolver::Filter
         logger("DomainFilter object constructed");
     } // DomainFilter::DomainFilter
 
-    bool DomainFilter::domainMatches(const string_view domainName) const {
+    bool DomainFilter::domainMatches(string_view domainName) const {
         logger("DomainFilter::domainMatches() called for domain: '%.*s' (length=%zu)",
                static_cast<int>(domainName.length()), domainName.data(), domainName.length());
+
+        // Remove trailing dot if present
+        removeTrailingDot(domainName);
 
         // Check for wildcard match first
         if(exactDomainMatches(domainName) || wildcardMatches(domainName)) {
@@ -195,6 +198,12 @@ namespace FilteringDnsResolver::Filter
         // No match found
         return false;
     } // DomainFilter::exactDomainMatches
+
+    void DomainFilter::removeTrailingDot(string_view &domain) {
+        if(!domain.empty() && domain.back() == '.') {
+            domain = domain.substr(0, domain.length() - 1);
+        }
+    } // DomainFilter::removeTrailingDot
 } // FilteringDnsResolver::Filter
 
 /*** end of file DomainFilter.cpp ***/
