@@ -59,7 +59,8 @@ namespace FilteringDnsResolver::DnsUtils
         logger("DnsMessenger::buildErrorReply() called with buffer=%p, length=%zu, rcode=%d (%s)",
                static_cast<const void*>(pMessageBuffer), messageLength, CastUtils::castEnumToInt(rcode),
                CastUtils::castEnumToString<DnsRCodes>(rcode).c_str());
-        verbose("Building DNS error response with code %d", CastUtils::castEnumToInt(rcode));
+        verbose("Building DNS error response with code %d (%s)", CastUtils::castEnumToInt(rcode),
+               CastUtils::castEnumToString<DnsRCodes>(rcode).c_str());
 
         // Check if the parsed query is valid (has valid qEndOffset)
         const bool isQueryValid = (parsedQuery.mQEndOffset != DnsQuery::EMPTY_FIELD);
