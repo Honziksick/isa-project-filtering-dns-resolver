@@ -1,0 +1,62 @@
+# Generated for testing
+
+### EXACT DOMAINS ###
+# Komentář v sekci
+blocked-domain.com
+
+# Prázdný řádek
+UPPERCASE-DOMAIN.COM
+mixed-Case.Example.Org
+
+# Domény s čísly a pomlčkami
+test-123.numeric-domain.com
+domain-with-many-dashes-and-numbers-123-456.com
+
+# Velmi dlouhé jméno
+this-is-a-very-long-domain-name-that-tests-parsing-limits.super-long-tld.example.com
+
+# Edge cases které by měly být validovány
+single.com
+a.b
+very.deep.subdomain.with.many.labels.example.com
+
+### WILDCARD PATTERNS ###
+*.wildcard-test.net
+*.ads.tracker.com
+*.malware.example.org
+
+# Case variations
+*.UpperCase.Wild.Com
+*.MiXeD-cAsE.test
+
+# Wildcard s čísly
+*.tracker-123.analytics.net
+
+### NEVALIDNÍ DOMÉNY BY MĚLY BÝT IGNOROVÁNY ###
+# Neplatný znak v doméně (vykřičník, zavináč, podtržítko, mezera)
+exam!ple.com
+invalid@domain.com
+examp_le.com
+exam ple.com
+
+# Více po sobě jdoucích teček
+example..com
+..example.com
+example.com..
+
+# Prázdný label na začátku nebo na konci (tečka na začátku nbeo na konci)
+.example.com
+example.com.
+
+# Doména delší než 253 znaků
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.com
+
+# Label delší než 63 znaků
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com
+
+# Label začíná nebo končí pomlčkou
+-example.com
+example-.com
+-invalid-.com
+
+# Komentář na konci
