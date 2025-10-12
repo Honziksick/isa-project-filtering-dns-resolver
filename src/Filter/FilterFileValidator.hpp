@@ -63,16 +63,6 @@ namespace FilteringDnsResolver::Filter
 
     private:
         /**
-         * @brief Validates total domain name length against DNS limits.
-         *
-         * @details Checks if domain name length complies with DNS maximum
-         *          length restrictions to ensure proper network handling.
-         *
-         * @param domain String view of domain name to check.
-         */
-        static void validateDomainLength(std::string_view domain);
-
-        /**
          * @brief Checks if the domain is a wildcard pattern.
          *
          * @details Determines if the provided domain string represents
@@ -83,50 +73,6 @@ namespace FilteringDnsResolver::Filter
          * @return `true` if domain is a wildcard pattern, `false` otherwise.
          */
         static bool isWildcard(std::string_view domain);
-
-        /**
-         * @brief Validates domain character set compliance.
-         *
-         * @details Verifies that domain contains only valid DNS characters
-         *          according to RFC specifications for domain names.
-         *
-         * @param domain String view of domain name to validate.
-         */
-        static void validateDomainCharacters(std::string_view domain);
-
-        /**
-         * @brief Splits domain by dots and validates individual labels.
-         *
-         * @details Parses domain into labels separated by dots and validates
-         *          each label for length and format compliance with DNS standards.
-         *
-         * @param domain String view of domain name to split and validate.
-         */
-        static void splitByDotAndValidateLabels(std::string_view domain);
-
-        /**
-         * @brief Validates individual label length against DNS limits.
-         *
-         * @details Checks if domain label length meets DNS label size
-         *          restrictions to ensure proper network protocol handling.
-         *
-         * @param label String view of domain label to check.
-         * @param domain String view of full domain for error context.
-         */
-        static void validateLabelLength(std::string_view label, std::string_view domain);
-
-        /**
-         * @brief Validates label format and character composition.
-         *
-         * @details Verifies that domain label follows proper DNS format
-         *          including valid characters and hyphen placement rules.
-         *
-         * @param label String view of domain label to validate.
-         * @param domain String view of full domain for error context.
-         */
-        static void validateLabelFormat(std::string_view label, std::string_view domain);
-
-        static constexpr auto DOT{'.'};  /**< Domain separator character for label parsing */
     }; // FilterFileValidator
 } // FilteringDnsResolver::Filter
 
