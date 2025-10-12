@@ -30,6 +30,7 @@
 #ifndef UDP_SOCKETS_HPP
 #define UDP_SOCKETS_HPP
 
+#include <netdb.h>  // sockaddr_in
 #include <cstdint>  // uint16_t
 #include <memory>   // std::unique_ptr
 
@@ -108,11 +109,12 @@ namespace FilteringDnsResolver::Networking
          *          listener socket bound to specified port for client queries.
          *          Configures sockets for optimal DNS protocol handling.
          *
+         * @param resolverxAddress Resolved address of the upstream DNS server.
          * @param listenerPort Port number for client DNS query listener socket.
          *
          * @return Configured UdpSockets instance with valid socket descriptors.
          */
-        static std::unique_ptr<UdpSockets> openUdpSockets(uint16_t listenerPort);
+        static std::unique_ptr<UdpSockets> openUdpSockets(sockaddr_in resolverxAddress, uint16_t listenerPort);
 
         /**
          * @brief Manually closes both managed UDP sockets.
@@ -154,6 +156,17 @@ namespace FilteringDnsResolver::Networking
          * @return File descriptor of created UDP socket.
          */
         static int createUdpSocket();
+
+        /**
+         * @brief Connects resolver socket to specified DNS server address.
+         *
+         * @details Establishes connection for resolver socket to upstream
+         *          DNS server using provided IP address and port number.
+         *
+         * @param resolverSocketFd File descriptor of the upstream DNS resolver socket
+         * @param resolverAddress Resolved address of the upstream DNS resolver.
+         */
+        static void connectResolverSocket(int resolverSocketFd, sockaddr_in resolverAddress);
 
         /**
          * @brief Closes resolver socket and invalidates descriptor.

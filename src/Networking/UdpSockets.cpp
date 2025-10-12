@@ -32,6 +32,7 @@
 #include "Utilities/Logger.hpp"
 #include <netinet/in.h>  // sockaddr_in, INADDR_ANY, htons(), htonl()
 #include <sys/socket.h>  // socket(), setsockopt(), bind()
+#include <arpa/inet.h>   // inet_ntoa()
 #include <unistd.h>      // close()
 #include <cstring>       // std::strerror
 #include <cerrno>        // errno()
@@ -77,12 +78,12 @@ namespace FilteringDnsResolver::Networking
         closeUdpSockets();
     } // UdpSockets::~UdpSockets
 
-    unique_ptr<UdpSockets> UdpSockets::openUdpSockets(const uint16_t listenerPort) {
+    unique_ptr<UdpSockets> UdpSockets::openUdpSockets(const sockaddr_in resolverAddress, const uint16_t listenerPort) {
         logger("UdpSockets::openUdpSockets() called with port %u", listenerPort);
         verbose("Initializing DNS server on port %u", listenerPort);
 
         // Create listener socket
-        logger("Step 1: Creating listener socket");
+        logger("Creating listener socket");
         const int listenerSocketFd = createUdpSocket();
         logger("Listener socket creation result: fd=%d", listenerSocketFd);
 
@@ -98,7 +99,7 @@ namespace FilteringDnsResolver::Networking
         // Set socket options to allow address reuse
         // SOL_SOCKET - manipulate options at the sockets API level
         // SO_REUSEADDR - allow reuse of local addresses
-        logger("Step 2: Setting socket options for address reuse");
+        logger("Setting socket options for address reuse");
         constexpr int opt = 1;
 
         if(setsockopt(listenerSocketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
@@ -114,7 +115,7 @@ namespace FilteringDnsResolver::Networking
         logger("Socket options set successfully");
 
         // Set the listener socket to the specified port on all interfaces
-        logger("Step 3: Binding listener socket to port %u", listenerPort);
+        logger("Binding listener socket to port %u", listenerPort);
         sockaddr_in listenerAddress{};
         listenerAddress.sin_family = AF_INET;                // IPv4
         listenerAddress.sin_port = htons(listenerPort);      // Set the port to listen on
@@ -134,7 +135,7 @@ namespace FilteringDnsResolver::Networking
         logger("Listener socket bound successfully to 0.0.0.0:%u", listenerPort);
 
         // Create resolver socket
-        logger("Step 4: Creating resolver socket");
+        logger("Creating resolver socket");
         const int resolverSocketFd = createUdpSocket();
         logger("Resolver socket creation result: fd=%d", resolverSocketFd);
 
@@ -149,12 +150,35 @@ namespace FilteringDnsResolver::Networking
                     );
         } // if(resolverSocketFd < 0)
 
+        logger("Connecting resolver socket to upstream DNS server");
+        connectResolverSocket(resolverSocketFd, resolverAddress);
+        logger("Upstream DNS resolver connected successfully");
+
         logger("UDP sockets created successfully: listenerFd=%d, resolverFd=%d",
                listenerSocketFd, resolverSocketFd);
         verbose("DNS server ready on port %u", listenerPort);
 
         return make_unique<UdpSockets>(resolverSocketFd, listenerSocketFd);
     } // UdpSockets::openUdpSockets
+
+    void UdpSockets::connectResolverSocket(const int resolverSocketFd, sockaddr_in resolverAddress) {
+        logger("Connecting resolver socket to DNS server on port %u", resolverAddress.sin_port);
+        verbose("Establishing connection to DNS server on port %u", resolverAddress.sin_port);
+
+        // Connect the resolver socket to the DNS server
+        logger("Calling connect() on resolver socket fd=%d", resolverSocketFd);
+        const auto result = connect(resolverSocketFd, reinterpret_cast<sockaddr*>(&resolverAddress), sizeof(resolverAddress));
+        if(result < 0) {
+            logger("ERROR: connect() failed with errno=%d: %s", errno, strerror(errno));
+            verbose("Failed to connect to DNS server on port %u - %s", resolverAddress.sin_port, strerror(errno));
+            throw SocketErrorException(
+                    "Failed to connect resolver socket: " + string(strerror(errno))
+                    );
+        }
+
+        logger("Resolver socket successfully connected to port %u", resolverAddress.sin_port);
+        verbose("Connection to DNS server on port %u established successfully", resolverAddress.sin_port);
+    } // UdpSockets::connectResolverSocket
 
     void UdpSockets::closeUdpSockets() noexcept {
         logger("UdpSockets::closeUdpSockets() called");
