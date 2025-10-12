@@ -168,12 +168,15 @@ run:
 ### MC # test: # Builds and runs the test executable 'dns-test' (different versions)
 ifndef SUBMISSION_MODE
 test:
+	@$(MAKE) $(SILENTOPT) install-test-dep
+	@chmod +x $(TEST_DIR)/run.sh
 	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Test
 	@cmake --build build --config Test --target $(EXECUTABLE)-test
-	./$(TEST_BIN_DIR)/$(EXECUTABLE)-test
+	./$(TEST_DIR)/run.sh
 else
-test:
-	@echo "$(COLOR_YELLOW)TODO$(COLOR_RESET)"
+test: $(EXECUTABLE)-test
+	@chmod +x $(TEST_DIR)/run.sh
+	./$(TEST_DIR)/run.sh
 endif
 
 ### MC # debug: # Builds the application in debug mode with stricter warnings (not allowed for submission)
