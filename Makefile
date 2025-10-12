@@ -144,7 +144,11 @@ MAIN_OBJ_DEBUG = $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(MAIN_SRC:.cpp=
 ################################################################################
 
 # The '.PHONY' command indicates that the following commands are never considered as files
-.PHONY: all build
+.PHONY: all build run test help clean doxygen pack \
+	clean-all clean-build clean-exec clean-test clean-doc clean-pack \
+	test-exceptions test-exception-handler test-argument-parser \
+	pack-prepare \
+	developer-mode submission-mode install-dev-dep install-help-dep install-build-dep install-doc-dep install-pack-dep install-test-dep update-dep
 
 ### MC # all: # Builds the 'dns' app
 all: build
@@ -163,32 +167,15 @@ run:
 	@if [ ! -f "$(EXECUTABLE)" ]; then \
 		$(MAKE) build; \
 	fi
-	./$(EXECUTABLE)
+	./$(EXECUTABLE) -h
 
-### MC # test: # Builds and runs the test executable 'dns-test' (different versions)
-ifndef SUBMISSION_MODE
+### MC # test: # Builds and runs the test executable 'dns' and runs the test script
 test:
-	@$(MAKE) $(SILENTOPT) install-test-dep
+	@if [ ! -f "$(EXECUTABLE)" ]; then \
+		$(MAKE) build; \
+	fi
 	@chmod +x $(TEST_DIR)/run.sh
-	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Test
-	@cmake --build build --config Test --target $(EXECUTABLE)-test
-	./$(TEST_DIR)/run.sh
-else
-test: $(EXECUTABLE)-test
-	@chmod +x $(TEST_DIR)/run.sh
-	./$(TEST_DIR)/run.sh
-endif
-
-### MC # debug: # Builds the application in debug mode with stricter warnings (not allowed for submission)
-ifndef SUBMISSION_MODE
-debug:
-	@$(MAKE) $(SILENTOPT) install-build-dep
-	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-	@cmake --build build --config Debug --target $(EXECUTABLE)-debug
-	./$(EXECUTABLE)-debug
-else
-debug: $(EXECUTABLE)-debug
-endif
+	cd $(TEST_DIR) && ./run.sh
 
 # Definition of shortcuts for command categories
 CATEGORIES := MC C T P DEV
