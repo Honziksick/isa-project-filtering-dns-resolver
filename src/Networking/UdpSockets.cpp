@@ -48,14 +48,14 @@ namespace FilteringDnsResolver::Networking
         : mResolverSocketFd{resolverSocketFd},
           mListenerSocketFd{listenerSocketFd} {
         logger("UdpSockets constructed with resolverFd=%d, listenerFd=%d",
-       resolverSocketFd, listenerSocketFd);
+               resolverSocketFd, listenerSocketFd);
     } // UdpSockets::UdpSockets
 
     UdpSockets::UdpSockets(UdpSockets &&otherUdpSockets) noexcept
         : mResolverSocketFd(otherUdpSockets.mResolverSocketFd),
           mListenerSocketFd(otherUdpSockets.mListenerSocketFd) {
         logger("UdpSockets move constructor: transferring fds %d, %d",
-       mResolverSocketFd, mListenerSocketFd);
+               mResolverSocketFd, mListenerSocketFd);
 
         otherUdpSockets.mListenerSocketFd = INVALID_FD;
         otherUdpSockets.mResolverSocketFd = INVALID_FD;
@@ -78,13 +78,13 @@ namespace FilteringDnsResolver::Networking
         closeUdpSockets();
     } // UdpSockets::~UdpSockets
 
-    unique_ptr<UdpSockets> UdpSockets::openUdpSockets(const sockaddr_in resolverAddress, const uint16_t listenerPort) {
+    unique_ptr<UdpSockets> UdpSockets::openUdpSockets(const sockaddr_storage &resolverAddress, const uint16_t listenerPort) {
         logger("UdpSockets::openUdpSockets() called with port %u", listenerPort);
         verbose("Initializing DNS server on port %u", listenerPort);
 
         // Create listener socket
         logger("Creating listener socket");
-        const int listenerSocketFd = createUdpSocket();
+        const int listenerSocketFd = createUdpSocket(AF_INET);
         logger("Listener socket creation result: fd=%d", listenerSocketFd);
 
         if(listenerSocketFd < 0) {
@@ -136,7 +136,7 @@ namespace FilteringDnsResolver::Networking
 
         // Create resolver socket
         logger("Creating resolver socket");
-        const int resolverSocketFd = createUdpSocket();
+        const int resolverSocketFd = createUdpSocket(resolverAddress.ss_family);
         logger("Resolver socket creation result: fd=%d", resolverSocketFd);
 
         if(resolverSocketFd < 0) {
@@ -146,7 +146,7 @@ namespace FilteringDnsResolver::Networking
 
             throw SocketErrorException(
                     "Failed to create UDP socket for resolver via "
-                    "'socket(AF_INET, SOCK_DGRAM, 0)': " + string(strerror(errno))
+                    "'socket(AF_INET/AF_INET6, SOCK_DGRAM, 0)': " + string(strerror(errno))
                     );
         } // if(resolverSocketFd < 0)
 
@@ -161,23 +161,59 @@ namespace FilteringDnsResolver::Networking
         return make_unique<UdpSockets>(resolverSocketFd, listenerSocketFd);
     } // UdpSockets::openUdpSockets
 
-    void UdpSockets::connectResolverSocket(const int resolverSocketFd, sockaddr_in resolverAddress) {
-        logger("Connecting resolver socket to DNS server on port %u", resolverAddress.sin_port);
-        verbose("Establishing connection to DNS server on port %u", resolverAddress.sin_port);
+    void UdpSockets::connectResolverSocket(const int resolverSocketFd, const sockaddr_storage &resolverAddress) {
+        uint16_t port{0};
+        std::string ipString{};
 
-        // Connect the resolver socket to the DNS server
-        logger("Calling connect() on resolver socket fd=%d", resolverSocketFd);
-        const auto result = connect(resolverSocketFd, reinterpret_cast<sockaddr*>(&resolverAddress), sizeof(resolverAddress));
-        if(result < 0) {
-            logger("ERROR: connect() failed with errno=%d: %s", errno, strerror(errno));
-            verbose("Failed to connect to DNS server on port %u - %s", resolverAddress.sin_port, strerror(errno));
-            throw SocketErrorException(
-                    "Failed to connect resolver socket: " + string(strerror(errno))
+        // IPv4
+        if(resolverAddress.ss_family == AF_INET) {
+            const auto *addressIPv4 = reinterpret_cast<const sockaddr_in*>(&resolverAddress);
+            port = ntohs(addressIPv4->sin_port);
+            ipString = inet_ntoa(addressIPv4->sin_addr);
+
+            logger("Connecting resolver socket to IPv4 DNS server %s:%u", ipString.c_str(), port);
+            verbose("Establishing connection to IPv4 DNS server %s:%u", ipString.c_str(), port);
+
+            if(connect(resolverSocketFd, reinterpret_cast<const sockaddr*>(addressIPv4), sizeof(sockaddr_in)) < 0) {
+                logger("ERROR: connect() failed (IPv4) with errno=%d: %s", errno, strerror(errno));
+                verbose("Failed to connect to IPv4 DNS server %s:%u - %s", ipString.c_str(), port, strerror(errno));
+
+                throw SocketErrorException(
+                    "Failed to connect resolver socket (IPv4): " + std::string(strerror(errno))
                     );
+            }
+        }
+        // IPv6
+        else if(resolverAddress.ss_family == AF_INET6) {
+            const auto *addressIPv6 = reinterpret_cast<const sockaddr_in6*>(&resolverAddress);
+            port = ntohs(addressIPv6->sin6_port);
+
+            char addressBuffer[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, &addressIPv6->sin6_addr, addressBuffer, sizeof(addressBuffer));
+            ipString = addressBuffer;
+
+            logger("Connecting resolver socket to IPv6 DNS server [%s]:%u", ipString.c_str(), port);
+            verbose("Establishing connection to IPv6 DNS server [%s]:%u", ipString.c_str(), port);
+
+            if(connect(resolverSocketFd, reinterpret_cast<const sockaddr*>(addressIPv6), sizeof(sockaddr_in6)) < 0) {
+                logger("ERROR: connect() failed (IPv6) with errno=%d: %s", errno, strerror(errno));
+                verbose("Failed to connect to IPv6 DNS server [%s]:%u - %s", ipString.c_str(), port, strerror(errno));
+
+                throw SocketErrorException(
+                    "Failed to connect resolver socket (IPv6): " + std::string(strerror(errno))
+                    );
+            }
+        }
+        // Unsupported address family
+        else {
+            logger("ERROR: Unsupported resolver address family (family=%d)", resolverAddress.ss_family);
+            throw SocketErrorException(
+                "Unsupported resolver address family (family=" + to_string(resolverAddress.ss_family) + ")"
+                );
         }
 
-        logger("Resolver socket successfully connected to port %u", resolverAddress.sin_port);
-        verbose("Connection to DNS server on port %u established successfully", resolverAddress.sin_port);
+        logger("Resolver socket successfully connected to DNS server %s:%u", ipString.c_str(), port);
+        verbose("Connection to DNS server %s:%u established successfully", ipString.c_str(), port);
     } // UdpSockets::connectResolverSocket
 
     void UdpSockets::closeUdpSockets() noexcept {
@@ -195,9 +231,9 @@ namespace FilteringDnsResolver::Networking
         return mListenerSocketFd;
     } // UdpSockets::getListenerSocketFd
 
-    int UdpSockets::createUdpSocket() {
-        logger("Creating UDP socket with socket(AF_INET, SOCK_DGRAM, 0)");
-        const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    int UdpSockets::createUdpSocket(const int family) {
+        logger("Creating UDP socket with socket(%s, SOCK_DGRAM, 0)", family == AF_INET ? "AF_INET" : "AF_INET6");
+        const int fd = socket(family, SOCK_DGRAM, 0);
         logger("socket() returned fd=%d", fd);
 
         return fd;

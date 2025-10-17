@@ -325,10 +325,20 @@ namespace FilteringDnsResolver::DnsUtils
             }
 
             // Check for pointer (we do not support pointers in QNAME)
-            if((labelLength & DNS_LABEL_POINTER_MASK) != 0) {
-                logger("getQuestionEndOffset failed: compression pointer detected (0x%02X)",
-                       labelLength);
-                return INVALID_MESSAGE_LENGTH;
+            if((labelLength & DNS_LABEL_POINTER_MASK) == DNS_LABEL_POINTER_MASK) {
+                if (offset >= messageLength) {
+                    logger("getQuestionEndOffset failed: truncated compression pointer");
+                    return INVALID_MESSAGE_LENGTH;
+                }
+
+                offset += 1;
+                logger("Compression pointer detected, QNAME ends here at offset %zu", offset);
+                break;  // QNAME ends with the pointer
+            }
+
+            if((labelLength & 0b11000000) == 0b10000000) {
+                logger("getQuestionEndOffset failed: invalid label length pattern 0x%02X (10xxxxxx)", labelLength);
+                return false;
             }
 
             // Move the offset forward by the length of the label

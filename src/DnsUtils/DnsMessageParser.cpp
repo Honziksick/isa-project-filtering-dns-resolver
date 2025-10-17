@@ -46,8 +46,8 @@ using namespace std;
 namespace FilteringDnsResolver::DnsUtils
 {
     void DnsMessageParser::parseAndValidate(const uint8_t *pMessageBuffer,
-                                                const size_t messageBufferLength,
-                                                DnsQuery &outQuery) {
+                                            const size_t messageBufferLength,
+                                            DnsQuery &outQuery) {
         logger("DnsMessageParser::parseAndValidate() called with buffer=%p, length=%zu bytes",
                static_cast<const void*>(pMessageBuffer), messageBufferLength);
         verbose("Parsing incoming DNS query message (%zu bytes)", messageBufferLength);
@@ -78,65 +78,63 @@ namespace FilteringDnsResolver::DnsUtils
         // Then we parse the domain name (QNAME) label by label
         if(!parseQName(pMessageBuffer, messageBufferLength, offset, qname)) {
             logger("QNAME parsing failed at offset %zu - throwing FORMERR", offset);
-            verbose("DNS query domain name is malformed");
+            verbose("DNS query domain name is malformed: %s", qname.c_str());
 
-            if(rcode == DnsRCodes::NOERROR) {
-                rcode = DnsRCodes::FORMERR;
-                errorDetail = "QNAME";
+            rcode = DnsRCodes::FORMERR;
+            errorDetail = "QNAME";
+        }
+        else {
+            logger("QNAME successfully parsed: '%s', final offset=%zu", qname.c_str(), offset);
+            verbose("Parsed domain name: %s", qname.c_str());
+        }
+
+        if(rcode == DnsRCodes::NOERROR) {
+            // After QNAME, we parse QTYPE and QCLASS
+            logger("Parsing QTYPE at offset %zu", offset);
+            try {
+                qtype = parseQType(pMessageBuffer, messageBufferLength, offset);
+                logger("QTYPE parsed: %u, new offset=%zu", qtype, offset);
             }
-        }
-        logger("QNAME successfully parsed: '%s', final offset=%zu", qname.c_str(), offset);
-        verbose("Parsed domain name: %s", qname.c_str());
-
-        // After QNAME, we parse QTYPE and QCLASS
-        logger("Parsing QTYPE at offset %zu", offset);
-        try {
-            qtype = parseQType(pMessageBuffer, messageBufferLength, offset);
-        }
-        catch(const DnsParseErrorException &e) {
-            logger("QTYPE parsing failed at offset %zu", offset);
-            if(rcode == DnsRCodes::NOERROR) {
+            catch(const DnsParseErrorException &e) {
+                logger("QTYPE parsing failed at offset %zu", offset);
                 rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
                 errorDetail = e.detail();
             }
-        }
-        logger("QTYPE parsed: %u, new offset=%zu", qtype, offset);
 
-        logger("Parsing QCLASS at offset %zu", offset);
-        try {
-            qclass = parseQClass(pMessageBuffer, messageBufferLength, offset);
-        }
-        catch(const DnsParseErrorException &e) {
-            logger("QCLASS parsing failed at offset %zu", offset);
             if(rcode == DnsRCodes::NOERROR) {
-                rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
-                errorDetail = e.detail();
-            }
-        }
-        logger("QCLASS parsed: %u, final offset=%zu", qclass, offset);
+                logger("Parsing QCLASS at offset %zu", offset);
+                try {
+                    qclass = parseQClass(pMessageBuffer, messageBufferLength, offset);
+                    logger("QCLASS parsed: %u, final offset=%zu", qclass, offset);
+                }
+                catch(const DnsParseErrorException &e) {
+                    logger("QCLASS parsing failed at offset %zu", offset);
+                    rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
+                    errorDetail = e.detail();
+                }
+            } // if QNAME and QTYPE parsed successfully
+        } // if QNAME parsed successfully
+
+        logger("Creating DnsQuery object with parsed data (may be partial if errors occurred)");
+        outQuery = DnsQuery{dnsHeader, offset, move(qname), qtype, qclass};
 
         // Last, we validate the parts of the parsed query
-        logger("Starting DNS query validation");
-        try {
-            if(rcode != DnsRCodes::NOERROR) {
-                logger("Previous parsing errors detected, validation will be skipped");
+        if(rcode == DnsRCodes::NOERROR) {
+            logger("Starting DNS query validation");
+            try {
+                validateDnsQuery(dnsHeader, qtype, qclass);
+                logger("DNS query validation completed successfully");
+                verbose("DNS query validation passed - query type %u, class %u", qtype, qclass);
             }
-
-            validateDnsQuery(dnsHeader, qtype, qclass);
-        }
-        catch(const DnsParseErrorException &e) {
-            logger("DNS query validation failed: %s", e.detail().c_str());
-            if(rcode == DnsRCodes::NOERROR) {
+            catch(const DnsParseErrorException &e) {
+                logger("DNS query validation failed: %s", e.detail().c_str());
                 rcode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
                 errorDetail = e.detail();
             }
+        } // if no errors so far
+        else {
+            logger("Previous parsing errors detected, validation will be skipped");
         }
-
-        logger("DNS query validation completed successfully");
-        verbose("DNS query validation passed - query type %u, class %u", qtype, qclass);
-
-        logger("Creating DnsQuery object with parsed data");
-        outQuery = DnsQuery{dnsHeader, offset, move(qname), qtype, qclass};
 
         if(rcode != DnsRCodes::NOERROR) {
             logger("Errors detected during parsing/validation - throwing exception with RCODE=%d (%s)",
@@ -190,11 +188,18 @@ namespace FilteringDnsResolver::DnsUtils
 
     bool DnsMessageParser::parseQName(const uint8_t *pMessageBuffer,
                                       const size_t messageBufferLength,
-                                      size_t &currentOffset,
+                                      size_t &inOutOffset,
                                       string &outQName) {
-        logger("DnsMessageParser::parseQName() called at offset %zu", currentOffset);
-        const size_t startOffset = currentOffset;
-        size_t labelCount = 0;
+        logger("DnsMessageParser::parseQName() called at offset %zu", inOutOffset);
+        const size_t inOffset{inOutOffset};
+        size_t currentOffset{inOutOffset};
+        size_t labelCount{0};
+
+        // Preparation for potentially parsing compressed names
+        bool usedCompression{false};
+        size_t jumpCounter{0};
+        size_t moveOffsetAfterJump{0};
+        vector<bool> visited(messageBufferLength, false);
 
         // QNAME is a sequence of labels ending with a zero-length label (0 byte)
         while(true) {
@@ -205,45 +210,112 @@ namespace FilteringDnsResolver::DnsUtils
                 return false;
             }
 
-            // Read the length of the next label
-            const uint8_t labelLength = pMessageBuffer[currentOffset++];
-            logger("Read label length: %u at offset %zu", labelLength, currentOffset - 1);
+            // Read the length of the next label or 1st byte of a compression pointer
+            const uint8_t labelLengthOrPtr = pMessageBuffer[currentOffset++];
+            logger("Read label length or pointer byte: 0x%02X at offset %zu", labelLengthOrPtr, currentOffset - 1);
 
             // If the length is zero, we've reached the end of the QNAME
-            if(labelLength == 0) {
+            if(labelLengthOrPtr == 0) {
                 logger("Found QNAME terminator (0-length label) at offset %zu", currentOffset - 1);
+
+                // If we used compression, we need to adjust the original offset differerently
+                if(!usedCompression) {
+                    inOutOffset = currentOffset;
+                }
+                else {
+                    inOutOffset = inOffset + moveOffsetAfterJump;
+                }
                 break;
             }
 
-            // Check for compression (not supported in this implementation)
-            if((labelLength & 0xC0) != 0) {
-                logger("QNAME parsing failed: compression detected (label length 0x%02X has compression bits set)",
-                       labelLength);
-                return false;
-            }
+            // Check for compression
+            // RFC 1035: The pointer takes the form of a two octet (2 + 14 bits):
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // | 1  1|                OFFSET                   |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            if((labelLengthOrPtr & DnsQuery::QNAME_COMPRESSION_MASK) == DnsQuery::QNAME_COMPRESSION_MASK) {
+                logger("Interpreted as compression pointer (0x%02X)", labelLengthOrPtr);
 
-            // If the label length exceeds the remaining buffer, it's an error
-            if(currentOffset + labelLength > messageBufferLength) {
-                logger("QNAME parsing failed: label length %u exceeds remaining buffer (%zu + %u > %zu)",
-                       labelLength, currentOffset, labelLength, messageBufferLength);
-                return false;
-            }
+                if(currentOffset >= messageBufferLength) {
+                    logger("QNAME parsing failed: truncated compression pointer at end of buffer");
+                    return false;
+                }
 
-            // Append the label to the output QNAME and add a dot if it's not the first label
-            if(!outQName.empty()) {
-                outQName.push_back('.');
-                logger("Added dot separator to QNAME");
-            }
+                // We prepare everything needed for extracting the 14b pointer offset
+                const uint8_t pointerLowerByte = pMessageBuffer[currentOffset++];
+                constexpr uint8_t GET_SIX_LOWER_BITS_OF_BYTE{0b00111111};
 
-            string currentLabel(reinterpret_cast<const char*>(pMessageBuffer + currentOffset), labelLength);
-            logger("Extracting label %zu: '%s' (length %u) from offset %zu",
-                   labelCount, currentLabel.c_str(), labelLength, currentOffset);
-            outQName.append(currentLabel);
-            labelCount++;
+                // Extract the 14-bit pointer offset - lowe6 6 bits from first byte + all 8 bits from second byte
+                const uint16_t pointerOffset = static_cast<uint16_t>((labelLengthOrPtr & GET_SIX_LOWER_BITS_OF_BYTE) << 8) |
+                        pointerLowerByte;
+                logger("Compression pointer detected: target offset=%u (bytes: 0x%02X 0x%02X)",
+                       pointerOffset, labelLengthOrPtr, pointerLowerByte);
 
-            // Move the offset past the label
-            currentOffset += labelLength;
-            logger("Advanced offset to %zu after reading label", currentOffset);
+                // Validate the pointer offset
+                if(pointerOffset >= messageBufferLength) {
+                    logger("QNAME parsing failed: pointer target %u out of bounds (len=%zu)",
+                           pointerOffset, messageBufferLength);
+                    return false;
+                }
+
+                // After the first compression jump, we remember how much to move the original offset
+                if(!usedCompression) {
+                    moveOffsetAfterJump = (currentOffset - inOffset);
+                    logger("First compression jump: will advance 'currentOffset' by %zu bytes", moveOffsetAfterJump);
+
+                    usedCompression = true; // flag that we used compression
+                }
+
+                jumpCounter++; // to avoid excessive jumps (before the check below)
+
+                // Detect compression loops and excessive jumps
+                if(jumpCounter > MAX_POINTER_CHAIN) {
+                    logger("QNAME parsing failed: too many compression jumps (>%zu)", MAX_POINTER_CHAIN);
+                    return false;
+                }
+                if(visited[pointerOffset]) {
+                    logger("QNAME parsing failed: compression loop detected at offset %u", pointerOffset);
+                    return false;
+                }
+
+                visited[pointerOffset] = true;  // mark this offset as visited to detect loops (after the checks above)
+
+                // We jump to the pointer target offset (dots are added later)
+                currentOffset = pointerOffset;
+            } // if compression
+            // Else it's a normal label (uncompressed)
+            else {
+                logger("Interpreted as uncompressed label of length: %u", labelLengthOrPtr);
+
+                // Check for invalid top bits pattern (10xx xxxx) – invalid according to RFC 1035
+                if((labelLengthOrPtr & 0b11000000) == 0b10000000) {
+                    logger("QNAME parsing failed: invalid label length pattern 0x%02X (10xxxxxx)", labelLengthOrPtr);
+                    return false;
+                }
+
+                // If the label length exceeds the remaining buffer, it's an error
+                if(currentOffset + labelLengthOrPtr > messageBufferLength) {
+                    logger("QNAME parsing failed: label length %u exceeds remaining buffer (%zu + %u > %zu)",
+                           labelLengthOrPtr, currentOffset, labelLengthOrPtr, messageBufferLength);
+                    return false;
+                }
+
+                // Append the label to the output QNAME and add a dot if it's not the first label
+                if(!outQName.empty()) {
+                    outQName.push_back('.');
+                    logger("Added dot separator to QNAME");
+                }
+
+                string currentLabel(reinterpret_cast<const char*>(pMessageBuffer + currentOffset), labelLengthOrPtr);
+                logger("Extracting label %zu: '%s' (length %u) from offset %zu",
+                       labelCount, currentLabel.c_str(), labelLengthOrPtr, currentOffset);
+                outQName.append(currentLabel);
+                labelCount++;
+
+                // Move the offset past the label
+                currentOffset += labelLengthOrPtr;
+                logger("Advanced offset to %zu after reading label", currentOffset);
+            } // else uncompressed label
         } // while(true)
 
         logger("QNAME before case conversion: '%s'", outQName.c_str());
@@ -273,12 +345,6 @@ namespace FilteringDnsResolver::DnsUtils
             logger("Splitting QName into labels and validating each");
             DomainValidators::splitByDotAndValidateLabels(outQName, true);
             logger("Label validation completed successfully");
-
-            // If we removed a trailing dot, we can add it back for error reporting
-            if(hadTrailingDot) {
-                outQName.push_back('.');
-                logger("Restored trailing dot to QNAME for error reporting");
-            }
         }
         catch(const DnsParseErrorException &e) {
             logger("QName validation failed: %s", e.detail().c_str());
@@ -288,7 +354,6 @@ namespace FilteringDnsResolver::DnsUtils
                 outQName.push_back('.');
                 logger("Restored trailing dot to QNAME for error reporting");
             }
-
             return false;
         }
         catch(const exception &e) {
@@ -303,7 +368,7 @@ namespace FilteringDnsResolver::DnsUtils
         }
 
         logger("QNAME parsing completed: '%s' (%zu labels, %zu total bytes processed)",
-               outQName.c_str(), labelCount, currentOffset - startOffset);
+               outQName.c_str(), labelCount, usedCompression ? moveOffsetAfterJump : (inOutOffset - inOffset));
 
         return true;
     } // DnsMessageParser::parseQName

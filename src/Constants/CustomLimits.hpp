@@ -40,6 +40,10 @@ namespace FilteringDnsResolver::Constants
         static constexpr size_t MIN_SERVER_PORT = 1;  /**< Minimum server port number (port 0 is reserved and thus not allowed). */
         static constexpr size_t MAX_SERVER_PORT = std::numeric_limits<uint16_t>::max();  /**< Maximum server port number.        */
 
+        // Domains and labels
+        static constexpr size_t MAX_DOMAIN_LENGTH = 253;  /**< Maximum length of a full domain name (in characters).             */
+        static constexpr size_t MAX_LABEL_LENGTH = 63;    /**< Maximum length of a single label within a domain (in characters). */
+
         // DNS Transaction ID (TXID) range
         /**
          * @brief Minimum inclusive 16-bit DNS Transaction ID value.

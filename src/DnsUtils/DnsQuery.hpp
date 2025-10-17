@@ -77,6 +77,8 @@ namespace FilteringDnsResolver::DnsUtils
         static constexpr auto HEADER_TRUE_SIZE{12};  /**< Size of DNS header in bytes according to RFC 1035. */
         static constexpr auto QTYPE_SIZE{2};         /**< Size of QTYPE field in bytes.  */
         static constexpr auto QCLASS_SIZE{2};        /**< Size of QCLASS field in bytes. */
+
+        static constexpr auto QNAME_COMPRESSION_MASK{0xC0};  /**< Mask to identify compressed QNAME labels. */
     }; // DnsQuery
 } // FilteringDnsResolver::DnsUtils
 

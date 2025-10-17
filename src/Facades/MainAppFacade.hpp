@@ -33,7 +33,7 @@
 #include "Filter/DomainFilter.hpp"
 #include "Networking/UdpSockets.hpp"
 #include "Networking/UdpFsm.hpp"
-#include <netdb.h>  // sockaddr_in
+#include <netdb.h>  // sockaddr_storage
 #include <memory>   // std::unique_ptr
 #include <string>   // std::string
 
@@ -74,7 +74,7 @@ namespace FilteringDnsResolver::Facades
     private:
         Arguments::CommandLineOptions mCommandLineOptions{};              /**< Parsed command line options and configuration.      */
         std::unique_ptr<Filter::DomainFilter> mDomainFilterPtr{nullptr};  /**< Domain filtering engine for query processing.       */
-        sockaddr_in mResolverAddress{};                                   /**< Resolved upstream DNS server network address.       */
+        sockaddr_storage mResolverAddress{};                                   /**< Resolved upstream DNS server network address.       */
         std::unique_ptr<Networking::UdpSockets> mUdpSocketsPtr{nullptr};  /**< UDP socket management for network communication.    */
         std::unique_ptr<Networking::UdpFsm> mUdpFsmPtr{nullptr};          /**< UDP finite state machine for DNS protocol handling. */
 
@@ -119,7 +119,7 @@ namespace FilteringDnsResolver::Facades
          * @param resolverAddress Address of upstream DNS resolver (includes IP and port).
          * @param listenerPort Port number for DNS query listener socket.
          */
-        void setupUdpSockets(sockaddr_in resolverAddress, uint16_t listenerPort);
+        void setupUdpSockets(sockaddr_storage resolverAddress, uint16_t listenerPort);
 
         /**
          * @brief Initializes the UDP finite state machine.

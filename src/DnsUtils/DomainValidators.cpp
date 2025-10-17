@@ -26,6 +26,7 @@
 
 #include "DnsUtils/DomainValidators.hpp"
 #include "Enums/DnsRCodes.hpp"
+#include "Constants/CustomLimits.hpp"
 #include "Exceptions/CustomExceptions.hpp"
 #include "Utilities/Logger.hpp"
 #include <string_view>  // std::string_view
@@ -33,6 +34,7 @@
 #include <cctype>       // std::isalnum()
 
 using namespace FilteringDnsResolver::Enums;
+using namespace FilteringDnsResolver::Constants;
 using namespace FilteringDnsResolver::Exceptions;
 using namespace std;
 
@@ -42,7 +44,7 @@ namespace FilteringDnsResolver::DnsUtils {
         logger("DomainValidators::validateDomainLength() called: domain "
                "length=%zu (limit: 1-253)", domainLength);
 
-        if(domainLength == 0 || domainLength >= 254) {
+        if(domainLength == 0 || domainLength >= CustomLimits::MAX_DOMAIN_LENGTH) {
             logger("ERROR: Domain length (%zu) is 0 or it exceeds maximum of 253 characters", domainLength);
 
             if(isIncomingQName) {
@@ -174,7 +176,7 @@ namespace FilteringDnsResolver::DnsUtils {
                 throw InvalidFilterFileContentException("Domain '" + string(domain) + "' contains an empty label");
             }
         }
-        if(label.size() > 63) {
+        if(label.size() > CustomLimits::MAX_LABEL_LENGTH) {
             logger("ERROR: Label length %zu exceeds maximum of 63 characters", label.size());
 
             if(isIncomingQName) {

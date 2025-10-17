@@ -40,7 +40,7 @@ using namespace std;
 
 namespace FilteringDnsResolver::HostnameResolution
 {
-    sockaddr_in ResolverSetup::setupResolver(const string &resolverHostname) {
+    sockaddr_storage ResolverSetup::setupResolver(const string &resolverHostname) {
         logger("ResolverSetup::setupResolver() called with hostname: '%s' (length=%zu)",
                resolverHostname.c_str(), resolverHostname.length());
         verbose("Setting up upstream DNS resolver: %s", resolverHostname.c_str());
@@ -52,26 +52,41 @@ namespace FilteringDnsResolver::HostnameResolution
 
         // Then we need to copy the resolved address into a sockaddr_in structure
         logger("Creating sockaddr_in structure and validating resolved address");
-        sockaddr_in resolverAddress{};
+        sockaddr_storage resolverAddress{};
 
-        if(resolvedAddressInfo && resolvedAddressInfo->ai_addr &&
-            resolvedAddressInfo->ai_addrlen >= sizeof(sockaddr_in)) {
+        if(resolvedAddressInfo && resolvedAddressInfo->ai_addr) {
             logger("Address validation passed - ai_addrlen=%u, required=%zu",
                    resolvedAddressInfo->ai_addrlen, sizeof(sockaddr_in));
 
             // Copy the resolved address into the sockaddr_in structure and set its parameters
             logger("Copying address data to sockaddr_in structure");
-            memcpy(&resolverAddress, resolvedAddressInfo->ai_addr, sizeof(sockaddr_in));
+            memcpy(&resolverAddress, resolvedAddressInfo->ai_addr, resolvedAddressInfo->ai_addrlen);
 
-            resolverAddress.sin_family = AF_INET;
-            resolverAddress.sin_port = htons(DefaultOptions::DEFAULT_RESOLVER_PORT);
+            // IPv4
+            if(resolvedAddressInfo->ai_family == AF_INET) {
+                reinterpret_cast<sockaddr_in*>(&resolverAddress)->sin_port = htons(DefaultOptions::DEFAULT_RESOLVER_PORT);
+                const char *ipString = inet_ntoa(reinterpret_cast<sockaddr_in*>(&resolverAddress)->sin_addr);
+                logger("Resolver configured (IPv4): %s:%d", ipString, DefaultOptions::DEFAULT_RESOLVER_PORT);
+            }
+            // IPv6
+            else if(resolvedAddressInfo->ai_family == AF_INET6) {
+                reinterpret_cast<sockaddr_in6*>(&resolverAddress)->sin6_port = htons(DefaultOptions::DEFAULT_RESOLVER_PORT);
+                char ipString[INET6_ADDRSTRLEN];
+                inet_ntop(AF_INET6, &reinterpret_cast<sockaddr_in6*>(&resolverAddress)->sin6_addr, ipString, sizeof(ipString));
+                logger("Resolver configured (IPv6): %s:%d", ipString, DefaultOptions::DEFAULT_RESOLVER_PORT);
+            }
+            // Unsupported address family
+            else {
+                logger("ERROR: Unsupported address family: %d", resolvedAddressInfo->ai_family);
+                verbose("Failed to configure upstream DNS resolver '%s' - unsupported address family",
+                        resolverHostname.c_str());
 
-            // Log the resolved IP for debugging
-            const char *ipString = inet_ntoa(resolverAddress.sin_addr);
-            logger("Resolver configured: %s:%d", ipString, DefaultOptions::DEFAULT_RESOLVER_PORT);
-            verbose("Successfully configured upstream DNS resolver: %s:%d",
-                    ipString, DefaultOptions::DEFAULT_RESOLVER_PORT);
-        }
+                freeaddrinfo(resolvedAddressInfo);
+                throw HostnameResolutionErrorException(
+                        "Resolved address for '" + resolverHostname + "' has unsupported address family"
+                        );
+            }
+        } // if valid address
         else {
             logger("ERROR: Address validation failed - resolvedAddressInfo=%p, ai_addr=%p, ai_addrlen=%u",
                    static_cast<void*>(resolvedAddressInfo),

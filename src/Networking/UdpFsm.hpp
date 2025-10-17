@@ -81,8 +81,8 @@ namespace FilteringDnsResolver::Networking
         static constexpr auto POLL_TIMEOUT_MS{1000};                                  /**< Poll timeout in milliseconds for event waiting. */
         static constexpr auto MAINTENANCE_INTERVAL{std::chrono::milliseconds(1000)};  /**< Interval for periodic maintenance operations.   */
 
-        static constexpr auto MAX_RESOLVER_PACKETS_PER_ITERATION{10};  /**< Max resolver packets to process per loop iteration. */
-        static constexpr int MAX_CLIENT_PACKETS_PER_ITERATION{20};     /**< Max client packets to process per loop iteration.   */
+        static constexpr auto MAX_RESOLVER_PACKETS_PER_ITERATION{100};  /**< Max resolver packets to process per loop iteration. */
+        static constexpr int MAX_CLIENT_PACKETS_PER_ITERATION{100};     /**< Max client packets to process per loop iteration.   */
 
         static constexpr int POLL_FD_COUNT{2};        /**< Number of file descriptors monitored by poll. */
         static constexpr int POLL_RESOLVER_INDEX{0};  /**< Poll array index for resolver socket. */

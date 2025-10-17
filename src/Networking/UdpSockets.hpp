@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      02.10.2025                                                    *
- * Last edit:    02.10.2025                                                    *
+ * Last edit:    14.10.2025                                                    *
  *                                                                             *
  * Description:  This header file provides `UdpSockets` class, which           *
  *               implements UDP socket management for the DNS resolver         *
@@ -109,12 +109,13 @@ namespace FilteringDnsResolver::Networking
          *          listener socket bound to specified port for client queries.
          *          Configures sockets for optimal DNS protocol handling.
          *
-         * @param resolverxAddress Resolved address of the upstream DNS server.
+         * @param resolverAddress Resolved address of the upstream DNS server.
          * @param listenerPort Port number for client DNS query listener socket.
          *
          * @return Configured UdpSockets instance with valid socket descriptors.
          */
-        static std::unique_ptr<UdpSockets> openUdpSockets(sockaddr_in resolverxAddress, uint16_t listenerPort);
+        static std::unique_ptr<UdpSockets> openUdpSockets(const sockaddr_storage &resolverAddress,
+                                                          uint16_t listenerPort);
 
         /**
          * @brief Manually closes both managed UDP sockets.
@@ -153,9 +154,11 @@ namespace FilteringDnsResolver::Networking
          * @details Low-level socket creation with proper options and
          *          configuration for efficient DNS protocol handling.
          *
+         * @param family Address family for the socket (AF_INET or AF_INET6).
+         *
          * @return File descriptor of created UDP socket.
          */
-        static int createUdpSocket();
+        static int createUdpSocket(int family);
 
         /**
          * @brief Connects resolver socket to specified DNS server address.
@@ -166,7 +169,7 @@ namespace FilteringDnsResolver::Networking
          * @param resolverSocketFd File descriptor of the upstream DNS resolver socket
          * @param resolverAddress Resolved address of the upstream DNS resolver.
          */
-        static void connectResolverSocket(int resolverSocketFd, sockaddr_in resolverAddress);
+        static void connectResolverSocket(int resolverSocketFd, const sockaddr_storage &resolverAddress);
 
         /**
          * @brief Closes resolver socket and invalidates descriptor.

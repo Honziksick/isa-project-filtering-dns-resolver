@@ -27,7 +27,7 @@
 #define RESOLVER_SETUP_HPP
 
 #include "HostnameResolution/HostnameResolver.hpp"
-#include <netdb.h>  // sockaddr_in
+#include <netdb.h>  // sockaddr_storage
 #include <string>   // std::string
 
 namespace FilteringDnsResolver::HostnameResolution
@@ -55,13 +55,13 @@ namespace FilteringDnsResolver::HostnameResolution
          * @param resolverHostname The hostname or IP address of the DNS resolver
          *                         to configure.
          *
-         * @return A `sockaddr_in` structure containing the resolved address
-         *         and port configuration for the DNS resolver.
+         * @return A `sockaddr_storage` structure containing the resolved
+         *         address and port configuration for the DNS resolver.
          *
          * @throws HostnameResolutionErrorException if the hostname cannot be
          *         resolved or if the resolved address is invalid.
          */
-        static sockaddr_in setupResolver(const std::string& resolverHostname);
+        static sockaddr_storage setupResolver(const std::string& resolverHostname);
     }; // ResolverSetup
 } // FilteringDnsResolver::HostnameResolution
 

@@ -48,12 +48,12 @@ namespace FilteringDnsResolver::HostnameResolution
         memset(&hints, 0, sizeof(hints));
         logger("addrinfo hints structure zeroed (size=%zu bytes)", sizeof(hints));
 
-        hints.ai_family = AF_INET;        // IPv4 addresses
+        hints.ai_family = AF_UNSPEC;      // IPv4/IPv6 addresses
         hints.ai_socktype = SOCK_DGRAM;   // UDP
         hints.ai_flags = AI_NUMERICSERV;  // port is a number
 
         logger("addrinfo hints configured:");
-        logger("  ai_family = %d (AF_INET for IPv4)", hints.ai_family);
+        logger("  ai_family = %d (AF_UNSPEC for IPv4/IPv6)", hints.ai_family);
         logger("  ai_socktype = %d (SOCK_DGRAM for UDP)", hints.ai_socktype);
         logger("  ai_flags = %d (AI_NUMERICSERV for numeric port)", hints.ai_flags);
 

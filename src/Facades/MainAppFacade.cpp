@@ -100,7 +100,7 @@ namespace FilteringDnsResolver::Facades
         logger("Domain filter built successfully");
     } // MainAppFacade::buildDomainFilter
 
-    void MainAppFacade::setupUdpSockets(const sockaddr_in resolverAddress, const uint16_t listenerPort) {
+    void MainAppFacade::setupUdpSockets(const sockaddr_storage resolverAddress, const uint16_t listenerPort) {
         logger("Setting up UDP sockets...");
         mUdpSocketsPtr = UdpSockets::openUdpSockets(resolverAddress, listenerPort);
         logger("UDP sockets set up successful");

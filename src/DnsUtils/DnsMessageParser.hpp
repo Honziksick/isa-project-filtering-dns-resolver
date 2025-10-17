@@ -65,6 +65,8 @@ namespace FilteringDnsResolver::DnsUtils
         static void parseAndValidate(const uint8_t *pMessageBuffer, size_t messageBufferLength, DnsQuery &outQuery);
 
     private:
+        static constexpr size_t MAX_POINTER_CHAIN{128}; /**< Max pointer jumps to prevent loops */
+
         /**
          * @brief Parses the DNS header from the message buffer.
          *
@@ -89,13 +91,13 @@ namespace FilteringDnsResolver::DnsUtils
          *
          * @param pMessageBuffer Pointer to the raw DNS message buffer.
          * @param messageBufferLength Length of the message buffer in bytes.
-         * @param currentOffset Reference to current parsing offset (updated).
+         * @param inOutOffset Reference to current parsing offset (updated).
          * @param outQName Reference to string for storing parsed domain name.
          *
          * @return `true` if QNAME parsed successfully, `false` if invalid format.
          */
         static bool parseQName(const uint8_t *pMessageBuffer, size_t messageBufferLength,
-                               size_t &currentOffset, std::string &outQName);
+                               size_t &inOutOffset, std::string &outQName);
 
         /**
          * @brief Parses the QTYPE field from the message buffer.

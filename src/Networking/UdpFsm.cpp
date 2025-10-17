@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      07.10.2025                                                    *
- * Last edit:    09.10.2025                                                    *
+ * Last edit:    13.10.2025                                                    *
  *                                                                             *
  * Description:  This source file implements the `UdpFsm` class, which is      *
  *               the UDP finite state machine for DNS protocol handling in     *
@@ -292,32 +292,23 @@ namespace FilteringDnsResolver::Networking {
             dnsRCode = CastUtils::castIntToEnum<DnsRCodes>(e.code());
         } // catch
 
-        // The query is valid, we check if the domain is blocked
-        if(mDomainFilterPtr->domainMatches(dnsQuery.mQName)) {
-            logger("Domain '%s' is BLOCKED -> sending REFUSED (qtype=%u, qclass=%u)",
-                   dnsQuery.mQName.c_str(), dnsQuery.mQType, dnsQuery.mQClass);
-            verbose("Blocked query for domain: %s", dnsQuery.mQName.c_str());
-            mMessengerPtr->sendRefusedMessage(messageBuffer, messageLength, clientAddress, dnsQuery);
-            return;
-        }
-
         // If there was a parsing error, we respond accordingly
         switch(dnsRCode) {
             // No error, we can proceed
             case DnsRCodes::NOERROR:
                 logger("No DNS parsing errors detected, proceeding with query processing");
                 break;
-            // The query is malformed
+                // The query is malformed
             case DnsRCodes::FORMERR:
                 logger("Validation failed: malformed DNS query");
                 mMessengerPtr->sendFormErrMessage(messageBuffer, messageLength, clientAddress);
                 return;
-            // The query is well-formed but contains unsupported features
+                // The query is well-formed but contains unsupported features
             case DnsRCodes::NOTIMP:
                 logger("Validation failed: unsupported DNS query features");
                 mMessengerPtr->sendNotImpMessage(messageBuffer, messageLength, clientAddress);
                 return;
-            // Other parsing errors
+                // Other parsing errors
             default:
                 logger("Validation failed: DNS parsing error with RCODE=%s", CastUtils::castEnumToString<DnsRCodes>(dnsRCode).c_str());
                 mMessengerPtr->sendServFailMessage(messageBuffer, messageLength, clientAddress);
@@ -338,9 +329,20 @@ namespace FilteringDnsResolver::Networking {
         if(dnsQuery.mQType != 1) {
             logger("Validation failed: QTYPE=%u (only A records supported)", dnsQuery.mQType);
             verbose("Unsupported query type %u - still going to forward it", dnsQuery.mQType);
+            mMessengerPtr->sendNotImpMessage(messageBuffer, messageLength, clientAddress, dnsQuery);
+            return; // we musn't forward unsupported class
         }
         else {
             logger("QTYPE validation passed (A record query)");
+        }
+
+        // The query is valid, we check if the domain is blocked
+        if(mDomainFilterPtr->domainMatches(dnsQuery.mQName)) {
+            logger("Domain '%s' is BLOCKED -> sending REFUSED (qtype=%u, qclass=%u)",
+                   dnsQuery.mQName.c_str(), dnsQuery.mQType, dnsQuery.mQClass);
+            verbose("Blocked query for domain: %s", dnsQuery.mQName.c_str());
+            mMessengerPtr->sendRefusedMessage(messageBuffer, messageLength, clientAddress, dnsQuery);
+            return;
         }
 
         logger("Domain '%s' allowed, forwarding to upstream resolver", dnsQuery.mQName.c_str());
