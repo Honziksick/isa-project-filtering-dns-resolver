@@ -1,60 +1,91 @@
+################################################################################
+#                                                                              #
+# Project:      Filtering DNS Resolver                                         #
+# University:   Faculty of Information Technology, BUT                         #
+# Subject:      ISA: Network Applications and Network Administration           #
+#                                                                              #
+# File:         conftest.py                                                    #
+# Author:       ChatGPT 5 + Jan Kalina <xkalinj00>                             #
+#                                                                              #
+# Created:      02.10.2025                                                     #
+# Last edit:    18.10.2025                                                     #
+#                                                                              #
+# Description:  Pytest configuration and fixtures for integration tests of     #
+#               the Filtering DNS Resolver. Provides reusable domain lists,    #
+#               wildcard patterns, resolver process management, test client,   #
+#               and temporary filter file utilities. Enables flexible and      #
+#               robust test setup for all integration test modules.            #
+#                                                                              #
+# Please note:  These tests and project testing framework in general were      #
+#               developed with the assistance of ChatGPT 5 by OpenAI. Thus,    #
+#               please don't consider this code as a subject for plagiarism    #
+#               testing.                                                       #
+#                                                                              #
+################################################################################
+
 import pytest
 import os
-import sys
 import tempfile
-from pathlib import Path
 from ResolverManager import DNSResolverManager
 from DnsClient import DNSTestClient
 
+
+# =============================================================================
+# Pytest CLI options
+# =============================================================================
+
 def pytest_addoption(parser):
-    """Přidání custom argumentů pro pytest"""
+    """Add custom command-line options for the test suite."""
     parser.addoption(
             "--resolver-binary",
             action="store",
             default="../../dns",
-            help="Path to DNS resolver binary"
+            help="Path to the DNS resolver binary",
             )
     parser.addoption(
             "--upstream-dns",
             action="store",
             default="8.8.8.8",
-            help="Upstream DNS server for tests"
+            help="Upstream DNS server address used by tests",
             )
     parser.addoption(
             "--test-port",
             action="store",
             type=int,
             default=15353,
-            help="Port for test DNS resolver"
+            help="Port to bind the test DNS resolver",
             )
     parser.addoption(
             "--enable-wildcard-tests",
             action="store_true",
             default=True,
-            help="Enable wildcard domain tests"
+            help="Enable wildcard-domain tests",
             )
     parser.addoption(
             "--valgrind",
             action="store_true",
             default=False,
-            help="Run DNS resolver under Valgrind for memory leak detection"
+            help="Run the DNS resolver under Valgrind to detect memory leaks",
             )
+
+
+# =============================================================================
+# Session-scoped config fixtures
+# =============================================================================
 
 @pytest.fixture(scope="session")
 def use_valgrind(request):
-    """Valgrind enable flag"""
+    """Whether to run the resolver under Valgrind."""
     return request.config.getoption("--valgrind")
+
 
 @pytest.fixture(scope="session")
 def resolver_binary(request):
-    """Binary path fixture"""
+    """Absolute path to the resolver binary; skip tests if missing or not executable."""
     binary_path = request.config.getoption("--resolver-binary")
 
     if not os.path.isabs(binary_path):
-        binary_path = os.path.join(
-                os.path.dirname(__file__),
-                binary_path
-                )
+        binary_path = os.path.join(os.path.dirname(__file__), binary_path)
 
     binary_path = os.path.abspath(binary_path)
 
@@ -68,40 +99,44 @@ def resolver_binary(request):
 
 @pytest.fixture(scope="session")
 def upstream_dns(request):
-    """Upstream DNS server fixture"""
+    """IP of the upstream DNS server used by the resolver."""
     return request.config.getoption("--upstream-dns")
 
 
 @pytest.fixture(scope="session")
 def test_port(request):
-    """Test port fixture"""
+    """TCP/UDP port for the test resolver."""
     return request.config.getoption("--test-port")
 
 
 @pytest.fixture(scope="session")
 def enable_wildcard_tests(request):
-    """Wildcard tests enable flag"""
+    """Boolean flag to enable/disable wildcard tests."""
     return request.config.getoption("--enable-wildcard-tests")
 
 
+# =============================================================================
+# Domain lists & patterns
+# =============================================================================
+
 @pytest.fixture(scope="session")
 def exact_blocked_domains():
-    """Přesné blokované domény (bez wildcardů)"""
+    """Exact blocked domains (no wildcards)."""
     return [
-            # Základní blokované domény
+            # Core blocked domains
             "blocked-domain.com",
             "evil.example.org",
             "malware.test",
 
-            # Spam domény
+            # Spam domains
             "spam.bad-site.net",
             "suspicious.net",
 
-            # Malware rodiny
+            # Malware families
             "malware-family.org",
             "trojan.malware.net",
 
-            # Tracking domény
+            # Tracking domains
             "tracker.ads.com",
             "analytics.spy.net",
 
@@ -110,119 +145,123 @@ def exact_blocked_domains():
 
             # Phishing
             "fake-bank.phishing.test",
-            "scam-payment.fraud.org"
+            "scam-payment.fraud.org",
             ]
 
 
 @pytest.fixture(scope="session")
 def wildcard_patterns():
-    """Wildcard vzory pro blokování celých domén a subdomén"""
+    """Wildcard patterns to block entire domains and subdomains."""
     return [
-            # Blokovat všechny subdomény ad serverů
+            # Block all subdomains of ad servers
             "*.doubleclick.net",
             "*.googlesyndication.com",
             "*.googleadservices.com",
 
-            # Blokovat všechny tracking domény
+            # Block all tracking domains
             "*.tracking.com",
             "*.analytics-provider.net",
 
-            # Blokovat všechny známé malware domény
+            # Block known malware domains
             "*.malware-distribution.org",
             "*.exploit-kit.ru",
 
-            # Blokovat všechny CDN pro škodlivý obsah
+            # Block CDNs serving malicious content
             "*.malicious-cdn.com",
 
             # Gambling sites
             "*.casino-spam.bet",
-            "*.gambling-ads.win"
+            "*.gambling-ads.win",
             ]
 
 
 @pytest.fixture(scope="session")
 def default_blocked_domains(exact_blocked_domains):
-    """Zpětná kompatibilita - vrací pouze exact domény"""
+    """Backward compatibility: return only the exact domains."""
     return exact_blocked_domains
 
 
 @pytest.fixture(scope="session")
 def combined_filter_domains(exact_blocked_domains, wildcard_patterns):
-    """Kombinované domény (exact + wildcard) pro kompletní filtr"""
+    """Combined filter set (exact + wildcard)."""
     return {
-            'exact': exact_blocked_domains,
-            'wildcards': wildcard_patterns
+            "exact": exact_blocked_domains,
+            "wildcards": wildcard_patterns,
             }
 
 
 @pytest.fixture(scope="session")
 def test_domains_should_block():
-    """Domény které BY MĚLY být zablokovány (pro pozitivní testy)"""
+    """Domains that SHOULD be blocked (positive tests)."""
     return {
             # Exact matches
-            'exact': [
+            "exact": [
                     "blocked-domain.com",
                     "malware.test",
-                    "spam.bad-site.net"
+                    "spam.bad-site.net",
                     ],
-            # Subdoména blokované exact domény
-            'subdomains': [
+            # Subdomains of exact-blocked domains
+            "subdomains": [
                     "sub.blocked-domain.com",
                     "deep.sub.malware.test",
-                    "www.spam.bad-site.net"
+                    "www.spam.bad-site.net",
                     ],
             # Wildcard matches
-            'wildcards': [
+            "wildcards": [
                     "ads.doubleclick.net",
                     "sub.ads.doubleclick.net",
                     "tracker.analytics-provider.net",
-                    "cdn1.malicious-cdn.com"
-                    ]
+                    "cdn1.malicious-cdn.com",
+                    ],
             }
 
 
 @pytest.fixture(scope="session")
 def test_domains_should_allow():
-    """Domény které BY NEMĚLY být zablokovány (pro negativní testy)"""
+    """Domains that SHOULD NOT be blocked (negative tests)."""
     return [
-            # Běžné legitimní domény
+            # Common legitimate domains
             "google.com",
             "github.com",
             "stackoverflow.com",
 
-            # Podobné názvy, ale jiná TLD
+            # Similar name, different TLD
             "blocked-domain.org",  # vs blocked-domain.com
 
-            # Domény obsahující blokovaný string, ale nejsou subdoménou
+            # Contain the blocked string but are not subdomains
             "notblocked-domain.com",
             "blocked-domaintest.com",
 
-            # Wildcard by neměl matchovat parent doménu
-            "doubleclick.net",  # *.doubleclick.net by nemělo matchovat samotnou doubleclick.net
-            "tracking.com"      # *.tracking.com by nemělo matchovat samotnou tracking.com
+            # Wildcard should not match the parent (apex) domain
+            "doubleclick.net",  # '*.doubleclick.net' should not match the apex
+            "tracking.com",     # '*.tracking.com' should not match the apex
             ]
 
 
 @pytest.fixture(scope="session")
 def edge_case_domains():
-    """Edge case domény pro testování okrajových případů"""
+    """Edge-case domains for boundary and robustness testing."""
     return {
-            'empty': "",
-            'single_char': "a",
-            'only_tld': ".com",
-            'multiple_dots': "...com",
-            'trailing_dot': "example.com.",
-            'uppercase': "BLOCKED-DOMAIN.COM",
-            'mixed_case': "BlOcKeD-DoMaIn.CoM",
-            'very_long': "a" * 253 + ".com",  # Max DNS label je 253 znaků
-            'unicode': "блокированный.домен",
-            'idn': "xn--d1acj3b.xn--d1aqf",  # punycode pro блокированный.домен
+            "empty": "",
+            "single_char": "a",
+            "only_tld": ".com",
+            "multiple_dots": "...com",
+            "trailing_dot": "example.com.",
+            "uppercase": "BLOCKED-DOMAIN.COM",
+            "mixed_case": "BlOcKeD-DoMaIn.CoM",
+            "very_long": "a" * 253 + ".com",  # Intended 'very long' name for boundary tests
+            "unicode": "блокированный.домен",
+            "idn": "xn--d1acj3b.xn--d1aqf",  # Punycode for блокированный.домен
             }
 
 
+# =============================================================================
+# Resolver manager & running resolver fixtures
+# =============================================================================
+
 @pytest.fixture(scope="session")
 def resolver_manager(resolver_binary, use_valgrind):
-    """DNS resolver manager fixture"""
+    """Create and manage the lifecycle of the DNS resolver process."""
     manager = DNSResolverManager(resolver_binary, use_valgrind=use_valgrind)
     yield manager
     manager.stop_resolver()
@@ -234,17 +273,17 @@ def running_resolver(
         exact_blocked_domains,
         wildcard_patterns,
         upstream_dns,
-        test_port
+        test_port,
         ):
-    """Běžící DNS resolver s exact doménami i wildcardy"""
-    # Kombinujeme exact domény a wildcard vzory do jednoho seznamu
+    """Run the DNS resolver with both exact domains and wildcard patterns."""
+    # Merge exact domains and wildcard patterns into a single list
     all_blocked_entries = exact_blocked_domains + wildcard_patterns
 
     resolver_manager.start_resolver(
             blocked_domains=all_blocked_entries,
             upstream_dns=upstream_dns,
             port=test_port,
-            verbose=True
+            verbose=True,
             )
     yield resolver_manager
 
@@ -254,14 +293,14 @@ def running_resolver_exact_only(
         resolver_manager,
         exact_blocked_domains,
         upstream_dns,
-        test_port
+        test_port,
         ):
-    """Běžící DNS resolver pouze s exact doménami (bez wildcardů)"""
+    """Run the DNS resolver with exact domains only (no wildcards)."""
     resolver_manager.start_resolver(
             blocked_domains=exact_blocked_domains,
             upstream_dns=upstream_dns,
             port=test_port,
-            verbose=True
+            verbose=True,
             )
     yield resolver_manager
 
@@ -271,29 +310,33 @@ def running_resolver_wildcards_only(
         resolver_manager,
         wildcard_patterns,
         upstream_dns,
-        test_port
+        test_port,
         ):
-    """Běžící DNS resolver pouze s wildcard vzory"""
+    """Run the DNS resolver with wildcard patterns only."""
     resolver_manager.start_resolver(
             blocked_domains=wildcard_patterns,
             upstream_dns=upstream_dns,
             port=test_port,
-            verbose=True
+            verbose=True,
             )
     yield resolver_manager
 
 
+# =============================================================================
+# Client & temp-file fixtures
+# =============================================================================
+
 @pytest.fixture(scope="session")
 def dns_client(test_port):
-    """DNS test client fixture"""
+    """DNS test client bound to the test resolver port."""
     return DNSTestClient(server_port=test_port)
 
 
 @pytest.fixture(scope="session")
 def temp_filter_file():
-    """Dočasný filter soubor fixture"""
-    fd, path = tempfile.mkstemp(suffix='.txt', prefix='filter_')
-    os.close(fd)  # Zavřeme file descriptor
+    """Temporary filter-file path; removed after the test session."""
+    fd, path = tempfile.mkstemp(suffix=".txt", prefix="filter_")
+    os.close(fd)  # Close the raw file descriptor
     yield path
     try:
         os.unlink(path)
@@ -303,8 +346,8 @@ def temp_filter_file():
 
 @pytest.fixture(scope="session")
 def temp_filter_file_with_content(temp_filter_file, exact_blocked_domains, wildcard_patterns):
-    """Dočasný filter soubor s připraveným obsahem"""
-    with open(temp_filter_file, 'w') as f:
+    """Temporary filter-file pre-populated with exact domains and wildcard patterns."""
+    with open(temp_filter_file, "w") as f:
         f.write("# Exact blocked domains\n")
         for domain in exact_blocked_domains:
             f.write(f"{domain}\n")
@@ -313,3 +356,5 @@ def temp_filter_file_with_content(temp_filter_file, exact_blocked_domains, wildc
             f.write(f"{pattern}\n")
 
     return temp_filter_file
+
+### end of file conftest.py ###

@@ -12,6 +12,7 @@
 **/test/googletest-library
 **/devenv
 **/*.zip
+**/test_filter_copies
 
 ### IDEs
 **/.idea

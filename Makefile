@@ -328,11 +328,14 @@ clean-build:
 ### C # clean-exec: # Removes the executable
 clean-exec:
 	rm -f $(EXECUTABLE)
+	rm -f $(EXECUTABLE)-test
 	rm -f $(EXECUTABLE)-debug
 
 ### C # clean-test: # Removes 'test/bin' folder with test executables
 clean-test:
 	rm -rf $(TEST_BIN_DIR)
+	rm -rf $(TEST_DIR)/test_filter_copies
+	rm -rf $(TEST_DIR)/.pytest_cache
 
 ### C # clean-doc: # Removes generated content of the 'doc' directory
 clean-doc:

@@ -53,12 +53,8 @@ eval "python3 -m pytest IntegrationTests/ComplexFunctionalityTest.py $PYTEST_FLA
 echo "=== Error Handling Tests ==="
 eval "python3 -m pytest IntegrationTests/ErrorHandlingTest.py $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
 
-# Všechny testy najednou
-echo "=== All Integration Tests ==="
-eval "python3 -m pytest IntegrationTests/ $PYTEST_FLAGS $USE_VALGRIND \
-    --resolver-binary=../dns \
-    --upstream-dns=8.8.8.8 \
-    --test-port=15353 \
-    --timeout=30 $STDERR_REDIRECT"
+# Error handling testy
+echo "=== Compress QNames Handling Tests ==="
+eval "python3 -m pytest IntegrationTests/CompressedNamesTest.py $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
 
 echo "=== Integration tests completed! ==="
