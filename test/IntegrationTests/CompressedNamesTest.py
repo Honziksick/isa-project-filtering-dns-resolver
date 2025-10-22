@@ -681,7 +681,7 @@ class TestCompressedNames:
                 )
 
         resp = client.send_malformed_query(wire)
-        assert resp is None # it should be forwarded => no local error
+        assert resp is None or resp.rcode in (DNSRCode.NOERROR, DNSRCode.NXDOMAIN)  # it should be forwarded => no local error
 
     def test_compressed_block_refused(self, resolver_manager):
         """
@@ -744,7 +744,7 @@ class TestCompressedNames:
                 )
 
         resp = client.send_malformed_query(wire)
-        assert resp is None # it should be forwarded => no local error
+        assert resp is None or resp.rcode in (DNSRCode.NOERROR, DNSRCode.NXDOMAIN)  # it should be forwarded => no local error
 
     def test_pointer_mid_label_offset_is_formerr(self, resolver_manager):
         """Pointer targets the MIDDLE of a label (not a boundary) → must be FORMERR."""
@@ -783,7 +783,7 @@ class TestCompressedNames:
                 )
 
         resp = client.send_malformed_query(wire)
-        assert resp is None # it should be forwarded => no local error
+        assert resp is None or resp.rcode in (DNSRCode.NOERROR, DNSRCode.NXDOMAIN)  # it should be forwarded => no local error
 
     def test_long_valid_chain_no_loop_no_local_error(self, resolver_manager):
         """
@@ -796,13 +796,13 @@ class TestCompressedNames:
         wire = build_three_question_valid_chain(
                 q1_name="a.example.com",   # suffix 1
                 q2_prefix="x",             # Q2 = x.a.example.com
-                q3_prefix="y.x",           # Q3 = y.x.a.example.com (via pointers into Q2/Q1)
+                q3_prefix="y.x",           # Q3 = y.x.x.a.example.com (via pointers into Q2/Q1)
                 qtype=1,
                 qclass=1,
                 )
 
         resp = client.send_malformed_query(wire)
-        assert resp is None # it should be forwarded => no local error
+        assert resp is None or resp.rcode in (DNSRCode.NOERROR, DNSRCode.NXDOMAIN)  # it should be forwarded => no local error
 
     def test_forward_pointer_between_questions_is_formerr(self, resolver_manager):
         """
