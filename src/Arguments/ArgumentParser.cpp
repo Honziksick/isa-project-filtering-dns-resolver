@@ -164,7 +164,6 @@ namespace FilteringDnsResolver::Arguments
                 " 107  – Socket error\n"
                 " 111  – Connection error (send / receive)\n"
                 " 113  – Hostname resolution error (getaddrinfo)\n"
-                " 130  – Process interrupted by user (SIGINT)\n"
                 );
 
         logger("ArgumentParser::setupCliApp() completed successfully");

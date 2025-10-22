@@ -105,7 +105,7 @@ namespace FilteringDnsResolver::Exceptions
 
     UserInterruptionException::UserInterruptionException(string detail) noexcept
         : BaseCustomException{
-            ExitCodes::USER_INTERRUPTION_ERROR,
+            ExitCodes::SUCCESS,
             ExceptionMessages::USER_INTERRUPTION_MSG,
             move(detail)
         } {}
