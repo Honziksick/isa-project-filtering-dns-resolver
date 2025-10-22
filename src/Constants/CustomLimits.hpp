@@ -25,6 +25,7 @@
 #define CUSTOM_LIMITS_HPP
 
 #include <cstdint>  // uint16_t
+#include <cstddef>  // size_t
 #include <limits>   // std::numeric_limits
 
 namespace FilteringDnsResolver::Constants
