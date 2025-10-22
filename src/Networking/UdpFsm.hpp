@@ -25,20 +25,26 @@
  * @author Jan Kalina \<xkalinj00>
  * @brief Header file declaring `UdpFsm` class for UDP finite state machine
  *        DNS protocol handling and asynchronous network event processing.
+ *
  */
 
 #ifndef UDP_FSM_HPP
 #define UDP_FSM_HPP
 
+#include "Networking/ClientJob.hpp"
 #include "DnsUtils/DnsMessenger.hpp"
 #include "DnsUtils/DnsForwarder.hpp"
 #include "Filter/DomainFilter.hpp"
 #include "Networking/UdpSockets.hpp"
+#include "Utilities/TSQueue.hpp"
 #include <netinet/in.h>  // sockaddr_in
 #include <cstdint>       // uint8_t, uint16_t
 #include <memory>        // std::unique_ptr
 #include <chrono>        // std::chrono
 #include <poll.h>        // pollfd
+#include <thread>        // std::thread
+#include <atomic>        // std::atomic
+#include <mutex>         // std::mutex
 
 namespace FilteringDnsResolver::Networking
 {
@@ -68,6 +74,11 @@ namespace FilteringDnsResolver::Networking
                         std::unique_ptr<Filter::DomainFilter> domainFilter);
 
         /**
+         * @brief Destructor for UDP FSM.
+         */
+        ~UdpFsm();
+
+        /**
          * @brief Starts the main FSM event loop for DNS processing.
          *
          * @details Executes the primary event loop using poll-based I/O multiplexing
@@ -77,17 +88,6 @@ namespace FilteringDnsResolver::Networking
         void run();
 
     private:
-        // Constants
-        static constexpr auto POLL_TIMEOUT_MS{1000};                                  /**< Poll timeout in milliseconds for event waiting. */
-        static constexpr auto MAINTENANCE_INTERVAL{std::chrono::milliseconds(1000)};  /**< Interval for periodic maintenance operations.   */
-
-        static constexpr auto MAX_RESOLVER_PACKETS_PER_ITERATION{100};  /**< Max resolver packets to process per loop iteration. */
-        static constexpr int MAX_CLIENT_PACKETS_PER_ITERATION{100};     /**< Max client packets to process per loop iteration.   */
-
-        static constexpr int POLL_FD_COUNT{2};        /**< Number of file descriptors monitored by poll. */
-        static constexpr int POLL_RESOLVER_INDEX{0};  /**< Poll array index for resolver socket. */
-        static constexpr int POLL_LISTENER_INDEX{1};  /**< Poll array index for listener socket. */
-
         // FDs
         std::unique_ptr<UdpSockets> mSocketFds;  /**< File descriptor for upstream DNS resolver socket and client listener socket. */
 
@@ -96,16 +96,115 @@ namespace FilteringDnsResolver::Networking
         std::unique_ptr<DnsUtils::DnsForwarder> mForwarderPtr;            /**< DNS message forwarding component.             */
         std::unique_ptr<DnsUtils::DnsMessenger> mMessengerPtr;            /**< DNS message handling and parsing component.   */
         std::chrono::steady_clock::time_point mNextMaintenanceTimestamp;  /**< Timestamp for next maintenance cycle.         */
+        Utilities::TSQueue<ClientJob> mClientQueue{Utilities::TSQueue<ClientJob>(CLIENT_QUEUE_CAPACITY)};  /**< Thread-safe queue for client jobs. */
+
+        // Threading and concurrency
+        mutable std::mutex mMutex{};                        /**< Mutex for protecting shared resources.                        */
+        std::vector<std::thread> mWorkerThreads{};          /**< Container for worker thread objects.                          */
+        std::thread mListenerThread{};                      /**< Thread for listening to incoming client DNS queries.          */
+        std::thread mResolverThread{};                      /**< Thread for handling responses from upstream resolver.         */
+        std::atomic<bool> mAreWorkerThreadsRunning{false};  /**< Indicates if worker threads are currently running.            */
+        std::atomic<bool> mAreLisResThreadsRunning{false};  /**< Indicates if listener/resolver threads are currently running. */
+
+        // Constants
+        static constexpr auto POLL_TIMEOUT_MS{100};                                     /**< Poll timeout in milliseconds for event waiting.          */
+        static constexpr auto MAINTENANCE_INTERVAL_MS{std::chrono::milliseconds{100}};  /**< Interval for periodic maintenance operations.            */
+        static constexpr auto MAIN_LOOP_SLEEP_MS{std::chrono::milliseconds{10}};        /**< Sleep duration in main FSM loop to prevent busy-waiting. */
+        static constexpr int POLL_FD_COUNT_IN_ONE_THREAD{1};                            /**< Number of file descriptors monitored in a single thread. */
+        static constexpr int WORKER_THREAD_COUNT{4};                                    /**< Number of worker threads for parallel query processing.  */
+        static constexpr auto LISTENER_READ_TIMEOUT_MS{std::chrono::milliseconds{1}};   /**< Time budget for reading listener events.                 */
+        static constexpr auto RESOLVER_READ_TIMEOUT_MS{std::chrono::milliseconds{1}};   /**< Time budget for reading resolver events.                 */
+        static constexpr size_t CLIENT_QUEUE_CAPACITY{8192};                            /**< Maximum capacity of the client job queue.                */
+        static constexpr size_t CLIENT_QUEUE_THROTTLE_LIMIT{4096};                      /**< Throttle limit for client job queue size.                */
 
         /**
-         * @brief Configures poll file descriptor structure for event monitoring.
+         * @brief Starts all worker threads for parallel DNS query processing.
          *
-         * @details Sets up pollfd structure with file descriptors and event masks
-         *          for monitoring resolver and listener sockets during poll operations.
-         *
-         * @param fdWatcher Pointer to pollfd array for configuration.
+         * @details Initializes and launches worker threads that process DNS
+         *          queries from clients in parallel, improving throughput and
+         *          responsiveness of the DNS resolver.
          */
-        void setupPollFd(pollfd *fdWatcher) const;
+        void startWorkerThreads();
+
+        /**
+         * @brief Stops all worker threads and joins them.
+         *
+         * @details Signals all worker threads to terminate, waits for their
+         *          completion, and ensures proper cleanup of resources
+         *          associated with parallel query processing.
+         */
+        void stopWorkerThreads();
+
+        /**
+         * @brief Starts listener and resolver I/O threads.
+         *
+         * @details Launches dedicated threads for monitoring incoming client
+         *          DNS queries and upstream resolver responses, enabling
+         *          asynchronous network event handling and efficient
+         *          I/O multiplexing.
+         */
+        void startLisResThreads();
+
+        /**
+         * @brief Stops listener and resolver I/O threads.
+         *
+         * @details Signals listener and resolver threads to terminate, waits
+         *          for their completion, and ensures proper resource cleanup
+         *          for network event processing.
+         */
+        void stopLisResThreads();
+
+        /**
+         * @brief Main loop executed by each worker thread.
+         *
+         * @details Continuously dequeues client DNS jobs from the thread-safe
+         *          queue, applies domain filtering, and forwards queries or
+         *          generates responses as needed. Each worker operates
+         *          independently.
+         *
+         * @param workerIndex Index of the worker thread.
+         */
+        void workerLoop(size_t workerIndex);
+
+        /**
+         * @brief Main loop for the listener thread to process client DNS queries.
+         *
+         * @details Continuously monitors the listener socket for incoming
+         *          DNS queries from clients, enqueues received jobs into the
+         *          thread-safe queue for worker processing.
+         */
+        void listenerLoop();
+
+        /**
+         * @brief Main loop for the resolver thread to process upstream DNS responses.
+         *
+         * @details Monitors the resolver socket for incoming DNS responses
+         *          from upstream servers, matches responses to client
+         *          transactions, and forwards them appropriately.
+         */
+        void resolverLoop();
+
+        /**
+         * @brief Configures pollfd structure for listener socket event monitoring.
+         *
+         * @details Sets up the pollfd structure to monitor the listener
+         *          socket for readable events, enabling efficient detection
+         *          of incoming client DNS queries.
+         *
+         * @param fdWatcher Reference to pollfd structure to be configured.
+         */
+        void setupListenerPollFd(pollfd &fdWatcher) const;
+
+        /**
+         * @brief Configures pollfd structure for resolver socket event monitoring.
+         *
+         * @details Sets up the pollfd structure to monitor the resolver socket
+         *          for readable events, enabling efficient detection of
+         *          incoming DNS responses from upstream resolvers.
+         *
+         * @param fdWatcher Reference to pollfd structure to be configured.
+         */
+        void setupResolverPollFd(pollfd &fdWatcher) const;
 
         /**
          * @brief Waits for socket events using poll system call.
@@ -113,12 +212,12 @@ namespace FilteringDnsResolver::Networking
          * @details Performs poll operation to wait for network events on monitored
          *          sockets with configured timeout for responsive event handling.
          *
-         * @param fdWatcher Pointer to configured pollfd array.
+         * @param fdWatcher Address of the configured pollfd variable.
          *
          * @return Number of file descriptors with pending events, or poll
          *         error code.
          */
-        static int pollEvents(pollfd *fdWatcher);
+        static int pollEvents(pollfd &fdWatcher);
 
         /**
          * @brief Handles incoming DNS query from client.

@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      02.10.2025                                                    *
- * Last edit:    02.10.2025                                                    *
+ * Last edit:    17.10.2025                                                    *
  *                                                                             *
  * Description:  This header file provides `DnsMessageParser` class, which     *
  *               implements parsing and validation of DNS query messages       *
@@ -32,6 +32,7 @@
 #include "DnsUtils/DnsQuery.hpp"
 #include <cstdint>  // uint8_t, uint16_t
 #include <string>   // std::string
+#include <vector>   // std::vector
 
 namespace FilteringDnsResolver::DnsUtils
 {
@@ -92,12 +93,12 @@ namespace FilteringDnsResolver::DnsUtils
          * @param pMessageBuffer Pointer to the raw DNS message buffer.
          * @param messageBufferLength Length of the message buffer in bytes.
          * @param inOutOffset Reference to current parsing offset (updated).
-         * @param outQName Reference to string for storing parsed domain name.
+         * @param outQNames Reference to vector of strings for storing parsed domain names.
          *
          * @return `true` if QNAME parsed successfully, `false` if invalid format.
          */
         static bool parseQName(const uint8_t *pMessageBuffer, size_t messageBufferLength,
-                               size_t &inOutOffset, std::string &outQName);
+                               size_t &inOutOffset, std::vector<std::string> &outQNames);
 
         /**
          * @brief Parses the QTYPE field from the message buffer.
@@ -141,13 +142,17 @@ namespace FilteringDnsResolver::DnsUtils
          *          (standard query). QR bit must be 0, Z bit must be 0, QDCOUNT must be 1.
          *
          * @param dnsHeader The parsed DNS header to validate.
-         * @param qtype The parsed QTYPE value to validate.
-         * @param qclass The parsed QCLASS value to validate.
+         * @param qtypes The parsed QTYPE(s) value to validate.
+         * @param qclasses The parsed QCLASS(es) value to validate.
+         * @param qnameCount The number of QNAME(s) parsed.
          *
          * @throws DnsParseErrorException If validation fails with specific RCODE
          *                                and component information.
          */
-        static void validateDnsQuery(const DnsHeader &dnsHeader, uint16_t qtype, uint16_t qclass);
+        static void validateDnsQuery(const DnsHeader &dnsHeader,
+                                     const std::vector<uint16_t> &qtypes,
+                                     const std::vector<uint16_t> &qclasses,
+                                     uint16_t qnameCount);
     }; // DnsMessageParser
 } // FilteringDnsResolver::DnsUtils
 

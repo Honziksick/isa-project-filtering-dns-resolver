@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      02.10.2025                                                    *
- * Last edit:    02.10.2025                                                    *
+ * Last edit:    17.10.2025                                                    *
  *                                                                             *
  * Description:  This source file implements the `DnsQuery` class, which       *
  *               represents a complete parsed DNS query message including      *
@@ -30,27 +30,47 @@
 #include "Utilities/Logger.hpp"
 #include <utility>  // std::move
 #include <string>   // std::string
+#include <vector>   // std::vector
 
 using namespace std;
 
 namespace FilteringDnsResolver::DnsUtils
 {
     DnsQuery::DnsQuery(const DnsHeader &header, const size_t qEndOffset,
-                       string qName, const uint16_t qType, const uint16_t qClass)
+                       vector<string> qNames, vector<uint16_t> qTypes, vector<uint16_t> qClasses)
         : mHeader{header},
           mQEndOffset{qEndOffset},
-          mQName{move(qName)},
-          mQType{qType},
-          mQClass{qClass} {
-        logger("DnsQuery::DnsQuery() constructor called with parameters:");
-        logger("  Header: ID=%u, flags=0x%04X, qdcount=%u, ancount=SKIPPED, nscount=SKIPPED, arcount=SKIPPED",
-               mHeader.mId, mHeader.mFlags, mHeader.mQdCount);
-        logger("  Question end offset: %zu bytes", mQEndOffset);
-        logger("  QNAME: '%s' (length=%zu)", mQName.c_str(), mQName.length());
-        logger("  QTYPE: %u, QCLASS: %u", mQType, mQClass);
+          mQNames{move(qNames)},
+          mQTypes{move(qTypes)},
+          mQClasses{move(qClasses)} {
+        // Helper lambdas for logging
+        auto concatStrings = [](const vector<string> &stringVector) {
+            string result;
+            for(size_t iString = 0; iString < stringVector.size(); iString++) {
+                if(iString > 0) {
+                    result += ", ";
+                }
+                result += stringVector[iString];
+            }
+            return result;
+        };
+        auto joinU16 = [](const vector<uint16_t> &U16Vector) {
+            string result;
+            for(size_t iU16 = 0; iU16 < U16Vector.size(); iU16++) {
+                if(iU16 > 0) {
+                    result += ", ";
+                }
+                result += to_string(U16Vector[iU16]);
+            }
+            return result;
+        };
 
-        verbose("DNS query object created for domain '%s' (type %u, class %u)",
-                mQName.c_str(), mQType, mQClass);
+        logger("  QNAMES: [%s] (count=%zu)", concatStrings(mQNames).c_str(), mQNames.size());
+        logger("  QTYPES: [%s]", joinU16(mQTypes).c_str());
+        logger("  QCLASSES: [%s]", joinU16(mQClasses).c_str());
+        verbose("DNS query object created for domains [%s] (types [%s], classes [%s])",
+                concatStrings(mQNames).c_str(), joinU16(mQTypes).c_str(), joinU16(mQClasses).c_str());
+
         logger("DnsQuery object successfully constructed");
     } // DnsQuery::DnsQuery
 } // FilteringDnsResolver::DnsUtils

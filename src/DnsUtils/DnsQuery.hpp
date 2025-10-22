@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      02.10.2025                                                    *
- * Last edit:    02.10.2025                                                    *
+ * Last edit:    17.10.2025                                                    *
  *                                                                             *
  * Description:  This header file provides `DnsQuery` class, which             *
  *               represents a complete parsed DNS query message including      *
@@ -30,6 +30,7 @@
 
 #include "DnsUtils/DnsHeader.hpp"
 #include <string>  // std::string
+#include <vector>  // std::vector
 
 namespace FilteringDnsResolver::DnsUtils
 {
@@ -61,18 +62,19 @@ namespace FilteringDnsResolver::DnsUtils
          *
          * @param header Parsed DNS header containing ID, flags, and question count.
          * @param qEndOffset Byte offset where the question section ends in the original message.
-         * @param qName Domain name being queried (converted to lowercase).
-         * @param qType DNS record type being requested (e.g., A=1, AAAA=28).
-         * @param qClass DNS class for the query (typically IN=1).
+         * @param qNames Domain name being queried (converted to lowercase).
+         * @param qTypes DNS record type being requested (e.g., A=1, AAAA=28).
+         * @param qClasses DNS class for the query (typically IN=1).
          */
         explicit DnsQuery(const DnsHeader &header, size_t qEndOffset,
-                          std::string qName, uint16_t qType, uint16_t qClass);
+                          std::vector<std::string> qNames, std::vector<uint16_t> qTypes,
+                          std::vector<uint16_t> qClasses);
 
-        DnsHeader mHeader{};              /**< Complete DNS header with ID, flags, and counts.              */
-        size_t mQEndOffset{EMPTY_FIELD};  /**< Byte offset where question section ends in original message. */
-        std::string mQName{};             /**< Domain name being queried (lowercase, dot-separated).        */
-        uint16_t mQType{EMPTY_FIELD};     /**< DNS record type being requested. */
-        uint16_t mQClass{EMPTY_FIELD};    /**< DNS class for the query.         */
+        DnsHeader mHeader{};                           /**< Complete DNS header with ID, flags, and counts.              */
+        size_t mQEndOffset{EMPTY_FIELD};               /**< Byte offset where question section ends in original message. */
+        std::vector<std::string> mQNames{};            /**< Domain name being queried (lowercase, dot-separated).        */
+        std::vector<uint16_t> mQTypes{EMPTY_FIELD};    /**< DNS record type being requested. */
+        std::vector<uint16_t> mQClasses{EMPTY_FIELD};  /**< DNS class for the query.         */
 
         static constexpr auto HEADER_TRUE_SIZE{12};  /**< Size of DNS header in bytes according to RFC 1035. */
         static constexpr auto QTYPE_SIZE{2};         /**< Size of QTYPE field in bytes.  */
