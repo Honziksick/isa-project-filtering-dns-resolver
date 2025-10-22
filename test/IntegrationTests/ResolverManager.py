@@ -75,7 +75,7 @@ class DNSResolverManager:
         self.filter_file: Optional[str] = None
         self.filter_stats: Optional[FilterStats] = None
         self.port = 15353  # default test port
-        self.verbose = False
+        self.verbose = True
 
     # --------------------------------------------------------------------- #
     # Validation helpers

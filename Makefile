@@ -132,7 +132,7 @@ LIB_OBJS_DEBUG := $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(LIB_SRCS:.cpp
 
 # For 'dns' executable
 MAIN_SRC = $(SRC_DIR)/App/main.cpp
-MAIN_OBJ = $(patsubst $(SRC_DIR)/%, $(RELEASE_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
+MAIN_OBJ_RELEASE = $(patsubst $(SRC_DIR)/%, $(RELEASE_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
 MAIN_OBJ_TEST = $(patsubst $(SRC_DIR)/%, $(TEST_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
 MAIN_OBJ_DEBUG = $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
 
@@ -144,9 +144,9 @@ MAIN_OBJ_DEBUG = $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(MAIN_SRC:.cpp=
 ################################################################################
 
 # The '.PHONY' command indicates that the following commands are never considered as files
-.PHONY: all build run test help clean doxygen pack \
+.PHONY: all build run test help clean doc pack \
 	clean-all clean-build clean-exec clean-test clean-doc clean-pack \
-	test-exceptions test-exception-handler test-argument-parser \
+	run-test, test-venv, activate-venv, deactivate-venv, clean-venv \
 	pack-prepare \
 	developer-mode submission-mode install-dev-dep install-help-dep install-build-dep install-doc-dep install-pack-dep install-test-dep update-dep
 
@@ -174,8 +174,10 @@ test:
 	@if [ ! -f "$(EXECUTABLE)" ]; then \
 		$(MAKE) build; \
 	fi
-	@chmod +x $(TEST_DIR)/run.sh
-	cd $(TEST_DIR) && ./run.sh
+	@if [ ! -d "$(TEST_DIR)/myenv" ]; then \
+		$(MAKE) test-venv; \
+	fi
+	$(MAKE) run-test
 
 # Definition of shortcuts for command categories
 CATEGORIES := MC C T P DEV
@@ -219,7 +221,7 @@ endif
 
 ### MC # doc: # Generates project documentation into the `doc` directory (different versions)
 ifndef SUBMISSION_MODE
-doxygen:
+doc:
 	@$(MAKE) $(SILENTOPT) install-doc-dep
 	$(MAKE) $(SILENTOPT) clean-doc
 	doxygen Doxyfile
@@ -238,7 +240,7 @@ doxygen:
 		fi \
 	fi'
 else
-doxygen:
+doc:
 	$(MAKE) $(SILENTOPT) clean-doc
 	doxygen Doxyfile
 	@sed -i 's/\&lt;tt\&gt;/<tt>/g; s/\&lt;\/tt\&gt;/<\/tt>/g' $(DOC_DIR)/html/index.html
@@ -247,7 +249,7 @@ doxygen:
 	@echo '<html><head><meta http-equiv="refresh" content="0; url=./html/index.html"></head></html>' > $(DOC_DIR)/documentation.html
 endif
 
-### MC # pack: # Creates a ZIP archive with files intended for submission (not allowed for submission)
+### MC # pack: # Creates a TAR archive with files intended for submission (not allowed for submission)
 ifndef SUBMISSION_MODE
 pack:
 	@$(MAKE) $(SILENTOPT) install-pack-dep
@@ -336,6 +338,7 @@ clean-test:
 	rm -rf $(TEST_BIN_DIR)
 	rm -rf $(TEST_DIR)/test_filter_copies
 	rm -rf $(TEST_DIR)/.pytest_cache
+	$(MAKE) $(SILENTOPT) clean-venv
 
 ### C # clean-doc: # Removes generated content of the 'doc' directory
 clean-doc:
@@ -357,39 +360,22 @@ endif
 #                                                                              #
 ################################################################################
 
-### T # test-exceptions: # Builds and runs the 'CustomException' test (not allowed for submission)
-ifndef SUBMISSION_MODE
-test-exceptions:
-	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Test
-	@cmake --build build --config Test --target ExceptionsTests
-	./$(TEST_BIN_DIR)/ExceptionsTests
-else
-test-exceptions:
-	@echo "$(COLOR_RED)The 'test-exceptions' target is disabled for project submission.$(COLOR_RESET)"
-endif
+### T # run-test: # Sets executable permissions for the test script and runs it
+run-test: $(EXECUTABLE)
+	@chmod +x $(TEST_DIR)/run.sh
+	cd $(TEST_DIR) && ./run.sh
 
-### T # test-exception-handler: # Builds and runs the 'ExceptionHandler' test (not allowed for submission)
-ifndef SUBMISSION_MODE
-test-exception-handler:
-	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Test
-	@cmake --build build --config Test --target ExceptionHandlerTests
-	./$(TEST_BIN_DIR)/ExceptionHandlerTests
-else
-test-exception-handler:
-	@echo "$(COLOR_RED)The 'test-exception-handler' target is disabled for project submission.$(COLOR_RESET)"
-endif
+### T # test-venv: # Creates a virtual environment for running integration tests
+test-venv:
+	@if [ ! -d "$(TEST_DIR)/myenv" ]; then \
+		python3 -m venv $(TEST_DIR)/myenv; \
+	fi && \
+    $(TEST_DIR)/myenv/bin/python -m pip install --upgrade pip setuptools wheel && \
+    $(TEST_DIR)/myenv/bin/python -m pip install -r $(TEST_DIR)/IntegrationTests/requirements.txt
 
-### T # test-argument-parser: # Builds and runs the 'ArgumentParser' test (not allowed for submission)
-ifndef SUBMISSION_MODE
-test-argument-parser:
-	@cmake -S . -B build -DCMAKE_BUILD_TYPE=Test
-	@cmake --build build --config Test --target ArgumentParserTests
-	./$(TEST_BIN_DIR)/ArgumentParserTests
-else
-test-argument-parser:
-	@echo "$(COLOR_RED)The 'test-argument-parser' target is disabled for project submission.$(COLOR_RESET)"
-endif
-
+### T # clean-venv: # Removes the virtual environment for running integration tests
+clean-venv:
+	rm -rf $(TEST_DIR)/myenv
 
 ################################################################################
 #                                                                              #
@@ -540,15 +526,6 @@ install-pack-dep:
 	@dpkg -s tar >/dev/null 2>&1 || (echo "Installing tar" && sudo apt-get install tar)
 else
 install-pack-dep:
-	@echo "$(COLOR_RED)The 'install-pack-dep' target is disabled for project submission.$(COLOR_RESET)"
-endif
-
-### DEV # install-test-dep: # Installs dependencies needed for project testing - cmake (not allowed for submission)
-ifndef SUBMISSION_MODE
-install-test-dep:
-	@dpkg -s cmake >/dev/null 2>&1 || (echo "Installing cmake" && sudo apt-get install cmake)
-else
-install-test-dep:
 	@echo "$(COLOR_RED)The 'install-pack-dep' target is disabled for project submission.$(COLOR_RESET)"
 endif
 

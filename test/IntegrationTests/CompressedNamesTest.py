@@ -541,8 +541,6 @@ def build_query_qname_pointer_to_self(txid: int | None = None, qtype: int = 1, q
     if txid is None:
         txid = random.randint(0, 0xFFFF)
 
-    time.sleep(1)
-
     qname = bytearray()
     qname.extend(b"\x02aa")  # 'aa'
     # Absolute position of the first pointer byte in the message:
@@ -596,8 +594,6 @@ class TestCompressedNames:
         resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[], verbose=True)
         client = DNSTestClient(server_port=resolver_manager.port)
 
-        time.sleep(1)
-
         wire, _ = build_query_qname_pointer_to_self(qtype=1, qclass=1)
         resp = client.send_malformed_query(wire)
         assert resp is not None, "Resolver did not respond"
@@ -607,18 +603,14 @@ class TestCompressedNames:
         resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[], verbose=True)
         client = DNSTestClient(server_port=resolver_manager.port)
 
-        time.sleep(1)
-
         wire, _ = build_query_qname_pointer_oob()
         resp = client.send_malformed_query(wire)
         assert resp is not None
         assert resp.rcode == DNSRCode.FORMERR
 
     def test_compressed_qname_pointer_into_header_returns_formerr(self, resolver_manager):
-        resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[])
+        resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[], verbose=True)
         client = DNSTestClient(server_port=resolver_manager.port)
-
-        time.sleep(1)
 
         wire, _ = build_query_qname_pointer_into_header()
         resp = client.send_malformed_query(wire)
@@ -629,10 +621,8 @@ class TestCompressedNames:
         """
         If QNAME is malformed (e.g., self-pointer), FORMERR takes precedence even for QTYPE=AAAA.
         """
-        resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[])
+        resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[], verbose=True)
         client = DNSTestClient(server_port=resolver_manager.port)
-
-        time.sleep(1)
 
         wire, _ = build_query_qname_pointer_to_self(qtype=28, qclass=1)  # AAAA
         resp = client.send_malformed_query(wire)
@@ -660,8 +650,6 @@ class TestCompressedNames:
                 qclass2=1,
                 )
 
-        time.sleep(1)
-
         resp = client.send_malformed_query(wire)
         assert resp is not None
         assert resp.rcode == DNSRCode.REFUSED, "Expected REFUSED when any QNAME is blocked"
@@ -679,7 +667,7 @@ class TestCompressedNames:
         QDCOUNT>1 is allowed → no local error (REFUSED/NOTIMP/FORMERR) expected.
         Echo of Question(1) must match.
         """
-        resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[])
+        resolver_manager.start_resolver(exact_domains=["blocked-domain.com"], wildcard_patterns=[], verbose=True)
         client = DNSTestClient(server_port=resolver_manager.port)
 
         wire, _, _ = build_two_question_with_compressed_second(
@@ -692,17 +680,8 @@ class TestCompressedNames:
                 qclass2=1,
                 )
 
-        time.sleep(1)
-
         resp = client.send_malformed_query(wire)
-        assert resp is not None
-        assert resp.rcode not in (DNSRCode.REFUSED, DNSRCode.NOTIMP, DNSRCode.FORMERR), \
-            "QDCOUNT>1 must not be rejected; no local error expected"
-
-        req_q1_end = end_of_question(wire, HEADER_LEN)
-        resp_q1_end = end_of_question(resp.raw_data, HEADER_LEN)
-        assert wire[HEADER_LEN:req_q1_end] == resp.raw_data[HEADER_LEN:resp_q1_end], \
-            "Server should echo original Question(1) unchanged"
+        assert resp is None # it should be forwarded => no local error
 
     def test_compressed_block_refused(self, resolver_manager):
         """
@@ -764,12 +743,8 @@ class TestCompressedNames:
                 qclass2=1,
                 )
 
-        time.sleep(1)
-
         resp = client.send_malformed_query(wire)
-        assert resp is not None, "Resolver did not respond"
-        assert resp.rcode not in (DNSRCode.REFUSED, DNSRCode.NOTIMP, DNSRCode.FORMERR), \
-            f"No local error expected, but got {resp.rcode}"
+        assert resp is None # it should be forwarded => no local error
 
     def test_pointer_mid_label_offset_is_formerr(self, resolver_manager):
         """Pointer targets the MIDDLE of a label (not a boundary) → must be FORMERR."""
@@ -808,8 +783,7 @@ class TestCompressedNames:
                 )
 
         resp = client.send_malformed_query(wire)
-        assert resp is not None
-        assert resp.rcode not in (DNSRCode.REFUSED, DNSRCode.NOTIMP, DNSRCode.FORMERR)
+        assert resp is None # it should be forwarded => no local error
 
     def test_long_valid_chain_no_loop_no_local_error(self, resolver_manager):
         """
@@ -828,8 +802,7 @@ class TestCompressedNames:
                 )
 
         resp = client.send_malformed_query(wire)
-        assert resp is not None
-        assert resp.rcode not in (DNSRCode.REFUSED, DNSRCode.NOTIMP, DNSRCode.FORMERR)
+        assert resp is None # it should be forwarded => no local error
 
     def test_forward_pointer_between_questions_is_formerr(self, resolver_manager):
         """

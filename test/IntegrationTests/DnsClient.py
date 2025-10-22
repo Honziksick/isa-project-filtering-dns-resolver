@@ -131,7 +131,7 @@ class DNSTestClient:
             server_ip: str = "127.0.0.1",
             server_port: int = 15353,
             timeout: float = 10.0,
-            verbose: bool = False,
+            verbose: bool = True,
             ):
         """
         Args:

@@ -1,7 +1,12 @@
 #!/bin/bash
 
-set -e
-rm -rf test_filter_copies .pytest_cache
+set -euo pipefail
+
+# Cesty
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/myenv"
+
+rm -rf "$SCRIPT_DIR/test_filter_copies" "$SCRIPT_DIR/.pytest_cache"
 
 echo "=== DNS Resolver Integration Tests ==="
 
@@ -9,6 +14,7 @@ echo "=== DNS Resolver Integration Tests ==="
 PYTEST_FLAGS="-v --tb=short"
 STDERR_REDIRECT=""
 USE_VALGRIND=""
+KEEP_VENV="false"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -22,39 +28,57 @@ while [[ $# -gt 0 ]]; do
             STDERR_REDIRECT="2>/dev/null"
             shift
             ;;
+        --keep-venv)
+            KEEP_VENV="true"
+            shift
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--stdout|--verbose] [--valgrind]"
+            echo "Usage: $0 [--stdout|--verbose] [--keep-venv]"
             exit 1
             ;;
     esac
 done
 
-# Requirements check
-echo "Checking requirements..."
-python3 -c "import pytest, scapy, dns" || {
-    echo "Missing Python dependencies. Install with:"
-    echo "pip install -r IntegrationTests/requirements.txt"
-    exit 1
+# Ensure venv exists
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating virtual environment in $VENV_DIR ..."
+    python3 -m venv "$VENV_DIR"
+fi
+
+VENV_PY="$VENV_DIR/bin/python"
+
+# Check/install requirements
+echo "Checking Python dependencies in venv..."
+if ! "$VENV_PY" -c "import pytest, scapy, dns" >/dev/null 2>&1; then
+    echo "Installing/upgrading pip, setuptools, wheel..."
+    "$VENV_PY" -m pip install --upgrade pip setuptools wheel
+    if [ -f "$SCRIPT_DIR/IntegrationTests/requirements.txt" ]; then
+        echo "Installing IntegrationTests/requirements.txt..."
+        "$VENV_PY" -m pip install -r "$SCRIPT_DIR/IntegrationTests/requirements.txt"
+    else
+        echo "Warning: requirements file not found: $SCRIPT_DIR/IntegrationTests/requirements.txt"
+    fi
+fi
+
+# Helper to run pytest through venv python
+run_pytest() {
+    local testfile="$1"
+    echo "=== Running: $testfile ==="
+    eval "\"$VENV_PY\" -m pytest \"$SCRIPT_DIR/$testfile\" $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
 }
 
-# Run tests
 echo "Running integration tests..."
 
-# Basic functionality testy
-echo "=== Basic Functionality Tests ==="
-eval "python3 -m pytest IntegrationTests/BasicFunctionalityTest.py $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
-
-# Complex functionality testy
-echo "=== Complex Functionality Tests ==="
-eval "python3 -m pytest IntegrationTests/ComplexFunctionalityTest.py $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
-
-# Error handling testy
-echo "=== Error Handling Tests ==="
-eval "python3 -m pytest IntegrationTests/ErrorHandlingTest.py $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
-
-# Error handling testy
-echo "=== Compress QNames Handling Tests ==="
-eval "python3 -m pytest IntegrationTests/CompressedNamesTest.py $PYTEST_FLAGS $USE_VALGRIND $STDERR_REDIRECT"
+run_pytest "IntegrationTests/BasicFunctionalityTest.py"
+run_pytest "IntegrationTests/ComplexFunctionalityTest.py"
+run_pytest "IntegrationTests/ErrorHandlingTest.py"
+run_pytest "IntegrationTests/CompressedNamesTest.py"
 
 echo "=== Integration tests completed! ==="
+
+# Cleanup
+if [ "$KEEP_VENV" != "true" ]; then
+    echo "Removing virtual environment..."
+    rm -rf "$VENV_DIR"
+fi

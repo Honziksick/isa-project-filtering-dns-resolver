@@ -11,6 +11,7 @@
 **/test/bin
 **/test/googletest-library
 **/devenv
+**/myenv
 **/*.zip
 **/test_filter_copies
 
