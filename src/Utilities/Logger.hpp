@@ -105,10 +105,12 @@ namespace FilteringDnsResolver::Utilities
                 fprintf(stderr, "%s", logMessage.str().c_str());
                 fprintf(stderr, format.data(), std::forward<Args>(args) ...);
                 fprintf(stderr, "%s\n", Constants::Color::RESET);
+                fflush(stderr);
             }
             else {
                 logMessage << format << Constants::Color::RESET;
                 std::cerr << logMessage.str() << std::endl;
+                std::cerr << std::flush;
             }
         } // Logger::log()
     }; // Logger
