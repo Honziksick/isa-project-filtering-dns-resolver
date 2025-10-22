@@ -44,7 +44,7 @@ example..com
 ..example.com
 example.com..
 
-# Prázdný label na začátku nebo na konci (tečka na začátku nbeo na konci)
+# Prázdný label na začátku nebo na konci (tečka na začátku nebo na konci)
 .example.com
 example.com.
 
