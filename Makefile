@@ -257,7 +257,7 @@ pack:
 	mkdir -p $(PACK_DIR)
 	$(MAKE) $(SILENTOPT) pack-prepare
 	@echo ""
-	@tar -C $(PACK_DIR) -cf $(PACK_DIR)/$(PACK_NAME).tar $(PACK_NAME)
+	cd $(PACK_DIR) && tar --transform='s|^\./||' -cvf $(PACK_NAME).tar -C $(PACK_NAME) .
 else
 pack:
 	@echo "$(COLOR_RED)The 'pack' target is disabled for project submission.$(COLOR_RESET)"
@@ -395,7 +395,12 @@ pack-prepare:
 			echo "$(COLOR_RED)\nError: The directory "$(SRC_DIR)" does not exist.$(COLOR_RESET)"; \
 		fi; \
 		if [ -d "$(TEST_DIR)" ]; then \
-			rsync -a --include '*.cpp' --include '*.hpp' --exclude '*/' $(TEST_DIR)/ $(ARCHIVE_DIR)/$(TEST_DIR)/; \
+			rsync -a --include '*.cpp' --include '*.hpp' --include '*.py' --include '*.txt' --include '*.sh' --exclude '*/' $(TEST_DIR)/ $(ARCHIVE_DIR)/$(TEST_DIR)/; \
+		else \
+			echo "$(COLOR_RED)\nError: The directory "$(TEST_DIR)" does not exist.$(COLOR_RESET)"; \
+		fi; \
+		if [ -d "$(TEST_DIR)/IntegrationTests" ]; then \
+			rsync -a --include '*.cpp' --include '*.hpp' --include '*.py' --include '*.txt' --include '*.sh' --exclude '*/' "$(TEST_DIR)/IntegrationTests/" "$(ARCHIVE_DIR)/$(TEST_DIR)/IntegrationTests/"; \
 		else \
 			echo "$(COLOR_RED)\nError: The directory "$(TEST_DIR)" does not exist.$(COLOR_RESET)"; \
 		fi; \
