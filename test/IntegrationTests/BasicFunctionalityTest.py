@@ -58,8 +58,7 @@ class TestBasicFunctionality:
     # --------------------------------------------------------------------- #
     def test_blocked_domain_refused(self, running_resolver, dns_client, exact_blocked_domains):
         """Exact-blocked domains must return REFUSED (RFC 1035)."""
-        # RFC 1035: REFUSED (5) = policy-based rejection
-        test_domains = exact_blocked_domains[:5]  # Take first 5
+        test_domains = exact_blocked_domains[:5]
 
         for domain in test_domains:
             response = dns_client.send_query(domain)
@@ -71,6 +70,17 @@ class TestBasicFunctionality:
             assert response.answers == 0
             assert response.is_blocked()
             print(f"✓ Exact domain blocked with REFUSED: {domain} (time: {response.response_time:.3f}s)")
+
+    def test_subdomain_blocking(self, running_resolver, dns_client, exact_blocked_subdomains):
+        """Subdomains of exact-blocked domains should be blocked."""
+        if not exact_blocked_subdomains:
+            pytest.skip("No subdomain test domains configured")
+
+        for domain in exact_blocked_subdomains[:5]:
+            response = dns_client.send_query(domain)
+            assert response.is_blocked(), f"Subdomain {domain} should be blocked"
+            assert response.rcode == DNSRCode.REFUSED, "Should return REFUSED for subdomain block"
+            print(f"✓ Subdomain blocked with REFUSED: {domain} (time: {response.response_time:.3f}s)")
 
     def test_allowed_domain_forwarded(self, running_resolver, dns_client, test_domains_should_allow):
         """Allowed domains should be forwarded upstream."""
@@ -93,31 +103,35 @@ class TestBasicFunctionality:
         print("=== Allowed domains test finished ===")
 
     # --------------------------------------------------------------------- #
-    # Wildcards & subdomains
+    # Wildcards
     # --------------------------------------------------------------------- #
-    def test_wildcard_blocking_basic(self, running_resolver, dns_client, test_domains_should_block):
-        """Basic wildcard blocking behavior."""
-        wildcard_test_domains = test_domains_should_block.get("wildcards", [])
-        if not wildcard_test_domains:
-            pytest.skip("No wildcard test domains configured")
+    def test_wildcard_blocking_subdomains(self, running_resolver, dns_client, wildcard_patterns):
+        """Wildcard patterns block subdomains."""
+        if not wildcard_patterns:
+            pytest.skip("No wildcard patterns configured")
 
-        for domain in wildcard_test_domains[:5]:
-            response = dns_client.send_query(domain)
-            assert response.is_blocked(), f"Wildcard domain {domain} should be blocked"
+        for pattern in wildcard_patterns[:5]:
+            base_domain = pattern.replace("*.", "")
+            test_subdomain = f"test.{base_domain}"
+
+            response = dns_client.send_query(test_subdomain)
+            assert response.is_blocked(), f"Wildcard subdomain {test_subdomain} should be blocked"
             assert response.rcode == DNSRCode.REFUSED, "Should return REFUSED for wildcard block"
-            print(f"✓ Wildcard blocked with REFUSED: {domain} (time: {response.response_time:.3f}s)")
+            print(f"✓ Wildcard subdomain blocked with REFUSED: {test_subdomain} (time: {response.response_time:.3f}s)")
 
-    def test_subdomain_blocking(self, running_resolver, dns_client, test_domains_should_block):
-        """Subdomains of exact-blocked domains should be blocked."""
-        subdomain_tests = test_domains_should_block.get("subdomains", [])
-        if not subdomain_tests:
-            pytest.skip("No subdomain test domains configured")
+    def test_wildcard_not_blocking_parent(self, running_resolver, dns_client, wildcard_patterns):
+        """Wildcard patterns should NOT block parent domain."""
+        if not wildcard_patterns:
+            pytest.skip("No wildcard patterns configured")
 
-        for domain in subdomain_tests[:5]:
-            response = dns_client.send_query(domain)
-            assert response.is_blocked(), f"Subdomain {domain} should be blocked"
-            assert response.rcode == DNSRCode.REFUSED, "Should return REFUSED for subdomain block"
-            print(f"✓ Subdomain blocked with REFUSED: {domain} (time: {response.response_time:.3f}s)")
+        for pattern in wildcard_patterns[:3]:
+            parent_domain = pattern.replace("*.", "")
+
+            response = dns_client.send_query(parent_domain)
+            assert not response.is_blocked(), f"Parent domain {parent_domain} should NOT be blocked by wildcard"
+            assert response.rcode in [DNSRCode.NOERROR, DNSRCode.NXDOMAIN], "Parent should be forwarded upstream"
+            print(f"✓ Wildcard parent domain NOT blocked: {parent_domain} (rcode={response.rcode})")
+
 
     # --------------------------------------------------------------------- #
     # Case-insensitivity
@@ -248,8 +262,8 @@ class TestBasicFunctionality:
         print(f"  Average: {avg_time:.3f}s")
         print(f"  Max: {max_time:.3f}s")
 
-        # Blocking should be extremely quick (no upstream hop)
         assert avg_time < 0.1, f"Blocked domain response too slow: {avg_time}s"
+
 
     # --------------------------------------------------------------------- #
     # Batch checks
@@ -267,20 +281,50 @@ class TestBasicFunctionality:
 
         assert result.block_rate > 95.0, f"Expected >95% block rate, got {result.block_rate:.1f}%"
 
-    def test_batch_wildcard_blocking(self, running_resolver, dns_client, test_domains_should_block):
-        """Batch test for wildcard blocking."""
-        wildcard_tests = test_domains_should_block.get("wildcards", [])
-        if not wildcard_tests:
-            pytest.skip("No wildcard test domains configured")
+    def test_batch_subdomain_blocking(self, running_resolver, dns_client, exact_blocked_subdomains):
+        """Batch test for subdomain blocking."""
+        if not exact_blocked_subdomains:
+            pytest.skip("No subdomain test domains configured")
 
-        result = dns_client.test_wildcard_blocking(wildcard_tests)
+        result = dns_client.test_exact_domain_blocking(exact_blocked_subdomains)
 
-        print("✓ Wildcard batch test:")
+        print("✓ Subdomain batch test:")
+        print(f"  Total: {result.total}")
+        print(f"  Blocked: {result.blocked}")
+        print(f"  Block rate: {result.block_rate:.1f}%")
+
+        assert result.block_rate > 95.0, f"Expected >95% subdomain block rate, got {result.block_rate:.1f}%"
+
+    def test_batch_wildcard_blocking(self, running_resolver, dns_client, wildcard_patterns):
+        """Batch test for wildcard blocking (subdomains only)."""
+        if not wildcard_patterns:
+            pytest.skip("No wildcard patterns configured")
+
+        # Generate test subdomains
+        test_subdomains = [f"test.{pattern.replace('*.', '')}" for pattern in wildcard_patterns]
+        result = dns_client.test_exact_domain_blocking(test_subdomains)
+
+        print("✓ Wildcard subdomain batch test:")
         print(f"  Total: {result.total}")
         print(f"  Blocked: {result.blocked}")
         print(f"  Block rate: {result.block_rate:.1f}%")
 
         assert result.block_rate > 95.0, f"Expected >95% wildcard block rate, got {result.block_rate:.1f}%"
+
+    def test_batch_wildcard_parent_not_blocked(self, running_resolver, dns_client, wildcard_patterns):
+        """Batch test ensuring wildcard parent domains are NOT blocked."""
+        if not wildcard_patterns:
+            pytest.skip("No wildcard patterns configured")
+
+        parent_domains = [pattern.replace("*.", "") for pattern in wildcard_patterns]
+        result = dns_client.test_allowed_domains(parent_domains)
+
+        print("✓ Wildcard parent domains batch test:")
+        print(f"  Total: {result.total}")
+        print(f"  Allowed: {result.allowed}")
+        print(f"  Blocked: {result.blocked}")
+
+        assert result.blocked == 0, f"Wildcard parent domains should NOT be blocked: {result.blocked} were blocked"
 
     def test_batch_allowed_domains(self, running_resolver, dns_client, test_domains_should_allow):
         """Batch test for allowed domains."""
@@ -292,8 +336,8 @@ class TestBasicFunctionality:
         print(f"  Blocked: {result.blocked}")
         print(f"  Success rate: {result.success_rate:.1f}%")
 
-        # None should be falsely blocked (REFUSED)
         assert result.blocked == 0, f"False positives detected: {result.blocked} domains blocked with REFUSED"
+
 
     # --------------------------------------------------------------------- #
     # Concurrency
@@ -301,10 +345,10 @@ class TestBasicFunctionality:
     @pytest.mark.asyncio
     @pytest.mark.timeout(30)
     async def test_concurrent_blocking_and_allowing(
-            self, running_resolver, dns_client, test_domains_should_block, test_domains_should_allow
+            self, running_resolver, dns_client, exact_blocked_domains, test_domains_should_allow
             ):
         """Concurrent mix of blocked and allowed queries."""
-        blocked_tests = test_domains_should_block.get("exact", [])[:10]
+        blocked_tests = exact_blocked_domains[:10]
         allowed_tests = test_domains_should_allow[:10]
 
         print(f"✓ Testing {len(blocked_tests)} blocked domains and {len(allowed_tests)} allowed domains")
@@ -329,7 +373,6 @@ class TestBasicFunctionality:
             print("\n❌ Allowed domains failures:")
             print(allowed_result.get_failure_summary())
 
-        # Assertions with detailed summaries
         assert blocked_result.block_rate > 95.0, (
                 f"Expected >95% block rate, got {blocked_result.block_rate:.1f}% "
                 f"({blocked_result.blocked}/{blocked_result.total} blocked)\n"
@@ -371,11 +414,13 @@ class TestBasicFunctionality:
 
         pattern = wildcard_patterns[0].replace("*.", "")
 
-        # Parent domain—implementation dependent (document behavior)
+        # Parent domain should NOT be blocked
         response = dns_client.send_query(pattern)
-        print(f"✓ Parent domain {pattern} result: blocked={response.is_blocked()}, rcode={response.rcode}")
+        assert not response.is_blocked(), f"Parent domain {pattern} should NOT be blocked by wildcard pattern"
+        assert response.rcode in [DNSRCode.NOERROR, DNSRCode.NXDOMAIN], "Parent should be forwarded upstream"
+        print(f"✓ Parent domain {pattern} correctly NOT blocked (rcode={response.rcode})")
 
-        # Subdomain SHOULD be blocked with REFUSED
+        # Subdomain SHOULD be blocked
         subdomain_response = dns_client.send_query(f"test.{pattern}")
         assert subdomain_response.is_blocked(), f"Subdomain test.{pattern} should be blocked"
         assert subdomain_response.rcode == DNSRCode.REFUSED, "Should return REFUSED for wildcard"
@@ -388,10 +433,8 @@ class TestBasicFunctionality:
         """Edge-case domain handling."""
         for case_name, domain in edge_case_domains.items():
             if not domain or domain in ["", ".", ".."]:
-                # These cause parsing errors—expect timeout or error
                 try:
                     response = dns_client.send_query(domain)
-                    # If a response arrives, it should be an error
                     assert response.rcode in [DNSRCode.FORMERR, DNSRCode.SERVFAIL, DNSRCode.REFUSED]
                     print(f"✓ Edge case '{case_name}': handled (rcode={response.rcode})")
                 except Exception as e:
@@ -405,15 +448,15 @@ class TestBasicFunctionality:
 
     def test_empty_query_handling(self, running_resolver, dns_client):
         """Empty/malformed query handling."""
-        malformed_query = b"\x00\x00" * 6  # Invalid DNS packet
+        malformed_query = b"\x00\x00" * 6
         response = dns_client.send_malformed_query(malformed_query)
 
         if response is None:
             print("✓ Malformed query correctly ignored (no response)")
         else:
-            # RFC 1035: FORMERR for malformed queries
             assert response.rcode in [DNSRCode.FORMERR, DNSRCode.SERVFAIL]
             print(f"✓ Malformed query handled with rcode={response.rcode}")
+
 
     # --------------------------------------------------------------------- #
     # REFUSED vs NXDOMAIN vs NOERROR distinction
@@ -479,7 +522,7 @@ class TestBasicFunctionality:
                     )
 
         resolver_manager.start_resolver(
-                filter_file_costum=temp_filter_file,  # keep original parameter name
+                filter_file_costum=temp_filter_file,
                 port=15354,
                 verbose=True,
                 )

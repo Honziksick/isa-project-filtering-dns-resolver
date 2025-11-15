@@ -29,7 +29,22 @@ import pytest
 import asyncio
 import time
 import random
+from typing import TypedDict, List
 from DnsClient import DNSRCode, DNSTestClient
+
+class ByCategory(TypedDict):
+    exact_blocked: int
+    wildcard_blocked: int
+    allowed: int
+
+class SustainedResults(TypedDict):
+    total_queries: int
+    successful_queries: int
+    blocked_queries: int
+    allowed_queries: int
+    errors: int
+    response_times: List[float]
+    by_category: ByCategory
 
 class TestComplexFunctionality:
     """Comprehensive test scenarios using the new configuration."""
@@ -47,19 +62,20 @@ class TestComplexFunctionality:
             test_domains_should_allow,
             ):
         """Concurrent mix of exact-blocked, wildcard-blocked, and allowed queries."""
-        # Build a mixed set of domains from the config
         test_cases = []
 
-        # Exact-blocked
+        # Exact-blocked (and their subdomains):
         for domain in exact_blocked_domains[:5]:
             test_cases.append((domain, True, "exact"))
+            test_cases.append((f"sub.{domain}", True, "exact-sub"))
+            test_cases.append((f"deep.sub.{domain}", True, "exact-sub-deep"))
 
-        # Wildcard-blocked
+        # Wildcard-blocked:
         for pattern in wildcard_patterns[:3]:
-            # Create test subdomains for wildcard
             base = pattern.replace("*.", "")
             test_cases.append((f"test.{base}", True, "wildcard"))
-            test_cases.append((f"sub.example.{base}", True, "wildcard"))
+            test_cases.append((f"sub.example.{base}", True, "wildcard-deep"))
+            test_cases.append((base, False, "wildcard-parent"))  # parent musí projít
 
         # Allowed
         for domain in test_domains_should_allow[:10]:
@@ -127,12 +143,13 @@ class TestComplexFunctionality:
             dns_client,
             exact_blocked_domains,
             test_domains_should_allow,
+            wildcard_patterns,
             ):
         """Sustained load over time with mixed domain types."""
         duration = 30  # 30 seconds
         start_time = time.time()
 
-        results = {
+        results: SustainedResults = {
                 "total_queries": 0,
                 "successful_queries": 0,
                 "blocked_queries": 0,
@@ -148,11 +165,12 @@ class TestComplexFunctionality:
 
         # Prepare test domains from the config
         blocked_domains = exact_blocked_domains[:10] if exact_blocked_domains else []
+        wildcard_bases = [p.replace("*.", "") for p in (wildcard_patterns or [])][:10]
         allowed_domains = (
                 test_domains_should_allow[:10] if test_domains_should_allow else ["google.com", "github.com"]
         )
-        all_test_domains = blocked_domains + allowed_domains
 
+        all_test_domains = blocked_domains + wildcard_bases + allowed_domains
         if not all_test_domains:
             pytest.skip("No test domains available")
 
@@ -162,6 +180,7 @@ class TestComplexFunctionality:
 
         while time.time() - start_time < duration:
             domain = random.choice(all_test_domains)
+
             # Add a random subdomain for variability
             test_domain = f"test{random.randint(1, 1000)}.{domain}"
 
@@ -175,6 +194,8 @@ class TestComplexFunctionality:
                     results["blocked_queries"] += 1
                     if domain in blocked_domains:
                         results["by_category"]["exact_blocked"] += 1
+                    elif domain in wildcard_bases:
+                        results["by_category"]["wildcard_blocked"] += 1
                 elif response.is_allowed():
                     results["allowed_queries"] += 1
                     if domain in allowed_domains:
@@ -226,7 +247,6 @@ class TestComplexFunctionality:
     # --------------------------------------------------------------------- #
     def test_filter_file_edge_cases(self, resolver_manager, temp_filter_file, dns_client):
         """Filter-file edge cases with categorized checks."""
-        # Create a complex filter file
         with open(temp_filter_file, "w") as f:
             f.write(
                     """# DNS Filter File - Edge Cases Test
@@ -295,24 +315,35 @@ class TestComplexFunctionality:
 
         # Test cases by category
         test_cases = [
-                # Exact domains
+                # Exact domains (parent)
                 ("blocked-domain.com", True, "exact-basic"),
                 ("UPPERCASE-DOMAIN.COM", True, "exact-uppercase"),
                 ("uppercase-domain.com", True, "exact-case-insensitive"),
                 ("Mixed-Case.Example.Org", True, "exact-mixed-case"),
                 ("test-123.numeric-domain.com", True, "exact-numeric"),
-                (
-                        "this-is-a-very-long-domain-name-that-tests-parsing-limits.super-long-tld.example.com",
-                        True,
-                        "exact-long",
-                        ),
-                # Wildcard tests
+                ("this-is-a-very-long-domain-name-that-tests-parsing-limits.super-long-tld.example.com",
+                  True,
+                  "exact-long",
+                ),
+                # Exact subdomains (must be blocked)
+                ("sub.blocked-domain.com", True, "exact-sub"),
+                ("deep.sub.blocked-domain.com", True, "exact-sub-deep"),
+                ("abc.UPPERCASE-DOMAIN.COM", True, "exact-sub-uppercase"),
+                ("www.mixed-case.example.org", True, "exact-sub-mixed"),
+                # Wildcard subdomains (blocked)
                 ("test.wildcard-test.net", True, "wildcard-basic"),
                 ("sub.example.wildcard-test.net", True, "wildcard-deep"),
                 ("anything.ads.tracker.com", True, "wildcard-ads"),
                 ("test.UpperCase.Wild.Com", True, "wildcard-case-insensitive"),
                 ("sub.tracker-123.analytics.net", True, "wildcard-numeric"),
-                # Should be allowed
+                # Wildcard parents (must be allowed)
+                ("wildcard-test.net", False, "wildcard-parent-allowed"),
+                ("ads.tracker.com", False, "wildcard-parent-allowed"),
+                ("malware.example.org", False, "wildcard-parent-allowed"),
+                ("UpperCase.Wild.Com", False, "wildcard-parent-allowed"),
+                ("MiXeD-cAsE.test", False, "wildcard-parent-allowed"),
+                ("tracker-123.analytics.net", False, "wildcard-parent-allowed"),
+                # Allowed
                 ("allowed-domain.com", False, "allowed-basic"),
                 ("google.com", False, "allowed-google"),
                 ("github.com", False, "allowed-github"),

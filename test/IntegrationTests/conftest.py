@@ -148,6 +148,35 @@ def exact_blocked_domains():
             "scam-payment.fraud.org",
             ]
 
+@pytest.fixture(scope="session")
+def exact_blocked_subdomains():
+    """Exact blocked subdomains (no wildcards)."""
+    return [
+            # Core blocked domains
+            "sub.blocked-domain.com",
+            "www.evil.example.org",
+            "deep.sub.malware.test",
+
+            # Spam domains
+            "a.b.c.spam.bad-site.net",
+            "xyz.suspicious.net",
+
+            # Malware families
+            "happy.malware-family.org",
+            "www.evil.trojan.malware.net",
+
+            # Tracking domains
+            "solid.tracker.ads.com",
+            "xxx.analytics.spy.net",
+
+            # Adult content
+            "cz.sk.com.explicit.xxx",
+
+            # Phishing
+            "give.me.your.money.fake-bank.phishing.test",
+            "this.is.scam-payment.fraud.org",
+            ]
+
 
 @pytest.fixture(scope="session")
 def wildcard_patterns():
