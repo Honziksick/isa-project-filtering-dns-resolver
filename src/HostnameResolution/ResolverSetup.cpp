@@ -29,6 +29,7 @@
 #include "Constants/DefaultOptions.hpp"
 #include "Utilities/Logger.hpp"
 #include <sys/socket.h>  // AF_INET, SOCK_DGRAM
+#include <netinet/in.h>  // sockaddr_in, sockaddr_in6, INET6_ADDRSTRLEN
 #include <arpa/inet.h>   // inet_ntoa(), htons()
 #include <netdb.h>       // addrinfo, sockaddr_in, freeaddrinfo()
 #include <cstring>       // memcpy

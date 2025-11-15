@@ -27,8 +27,9 @@
 #define RESOLVER_SETUP_HPP
 
 #include "HostnameResolution/HostnameResolver.hpp"
-#include <netdb.h>  // sockaddr_storage
-#include <string>   // std::string
+#include <sys/socket.h>  // sockaddr_storage
+#include <netdb.h>       // sockaddr_storage
+#include <string>        // std::string
 
 namespace FilteringDnsResolver::HostnameResolution
 {

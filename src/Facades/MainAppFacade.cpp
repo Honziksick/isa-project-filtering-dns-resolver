@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      28.09.2025                                                    *
- * Last edit:    08.10.2025                                                    *
+ * Last edit:    15.11.2025                                                    *
  *                                                                             *
  * Description:  This source file implements the `MainAppFacade` class, which  *
  *               serves as the main application facade for the Filtering DNS   *
@@ -100,7 +100,7 @@ namespace FilteringDnsResolver::Facades
         logger("Domain filter built successfully");
     } // MainAppFacade::buildDomainFilter
 
-    void MainAppFacade::setupUdpSockets(const sockaddr_storage resolverAddress, const uint16_t listenerPort) {
+    void MainAppFacade::setupUdpSockets(const sockaddr_storage &resolverAddress, const uint16_t listenerPort) {
         logger("Setting up UDP sockets...");
         mUdpSocketsPtr = UdpSockets::openUdpSockets(resolverAddress, listenerPort);
         logger("UDP sockets set up successful");

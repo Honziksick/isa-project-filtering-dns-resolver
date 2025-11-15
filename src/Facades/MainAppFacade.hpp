@@ -8,7 +8,7 @@
  * Author:       Jan Kalina <xkalinj00>                                        *
  *                                                                             *
  * Created:      26.09.2025                                                    *
- * Last edit:    08.10.2025                                                    *
+ * Last edit:    15.11.2025                                                    *
  *                                                                             *
  * Description:  This header file provides `MainAppFacade` class, which        *
  *               serves as the main application facade for the Filtering DNS   *
@@ -119,7 +119,7 @@ namespace FilteringDnsResolver::Facades
          * @param resolverAddress Address of upstream DNS resolver (includes IP and port).
          * @param listenerPort Port number for DNS query listener socket.
          */
-        void setupUdpSockets(sockaddr_storage resolverAddress, uint16_t listenerPort);
+        void setupUdpSockets(const sockaddr_storage &resolverAddress, uint16_t listenerPort);
 
         /**
          * @brief Initializes the UDP finite state machine.

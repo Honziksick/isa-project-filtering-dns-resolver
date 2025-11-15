@@ -30,9 +30,10 @@
 #ifndef UDP_SOCKETS_HPP
 #define UDP_SOCKETS_HPP
 
-#include <netdb.h>  // sockaddr_in
-#include <cstdint>  // uint16_t
-#include <memory>   // std::unique_ptr
+#include <sys/socket.h>  // sockaddr_storage
+#include <netdb.h>       // sockaddr_in
+#include <cstdint>       // uint16_t
+#include <memory>        // std::unique_ptr
 
 namespace FilteringDnsResolver::Networking
 {
