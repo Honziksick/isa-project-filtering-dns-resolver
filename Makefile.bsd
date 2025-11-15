@@ -1,0 +1,251 @@
+################################################################################
+#                                                                              #
+# Project:      Filtering DNS Resolver                                         #
+# University:   Faculty of Information Technology, BUT                         #
+# Subject:      ISA: Network Applications and Network Administration           #
+#                                                                              #
+# File:         Makefile.bsd                                                   #
+# Author:       Jan Kalina <xkalinj00>                                         #
+#                                                                              #
+# Created:      15.11.2025                                                     #
+# Last edit:    15.11.2025                                                     #
+#                                                                              #
+# Description:  This Makefile is simplified version of 'Makefile.gnu' so       #
+#               the project is buildable and runable on faculty FreeBSD        #
+#               server 'Eva'.                                                  #
+#                                                                              #
+################################################################################
+
+################################################################################
+#                                                                              #
+#                 BASIC SETTINGS AND DEFINITIONS FOR MAKEFILE                  #
+#                                                                              #
+################################################################################
+
+###                                   ###
+#  Basic configuration of the Makefile  #
+###                                   ###
+
+# Project name
+PROJECT = dns
+
+# Binaries
+EXECUTABLE = $(PROJECT)
+
+# Name of the ZIP archive for project submission
+PACK_NAME = xkalinj00
+
+
+###                                        ###
+#  Switches for running the $(MAKE) command  #
+###                                        ###
+
+# Run 'make' in silent mode (without event output)
+$(VERBOSE)SILENTOPT = -s
+
+# Default shell set to 'bash'
+SHELL = /bin/bash
+
+# Makefile self-reference
+SELF := Makefile.bsd
+
+
+###                   ###
+#  Definition of paths  #
+###                   ###
+
+# Path to the directory with source files for the compiler
+SRC_DIR = src
+
+# Directories for placing built files
+BUILD_DIR = build
+RELEASE_BUILD_DIR = $(BUILD_DIR)/release
+DEBUG_BUILD_DIR = $(BUILD_DIR)/debug
+TEST_BUILD_DIR = $(BUILD_DIR)/test
+
+# Path to the directory with tests
+TEST_DIR = test
+TEST_BIN_DIR = $(TEST_DIR)/bin
+
+# Directory for generating documentation
+DOC_DIR = doc
+
+# Directory with the prepared project for packaging
+PACK_DIR = pack
+ARCHIVE_DIR = $(PACK_DIR)/$(PACK_NAME)
+
+
+################################################################################
+#                                                                              #
+#                                BUILD SETTINGS                                #
+#                                                                              #
+################################################################################
+
+###           ###
+#  Compilation  #
+###           ###
+
+# Compiler and flags
+CXX = g++
+CXX_STD =-std=c++20
+WARNING_FLAGS = -Wall -Wextra -Werror -pedantic -Wshadow -Wconversion -Wsign-conversion -Wnull-dereference
+SANITIZE_FLAGS = -fsanitize=address -fsanitize=undefined
+THREAD_FLAGS = -pthread
+RELEASE_FLAGS = -O2 -DNDEBUG
+TEST_FLAGS = -O1 -g3 -DTESTING
+DEBUG_FLAGS = -O0 -g3 -DDEBUG
+
+# Build flags for different build types
+CXXFLAGS_RELEASE = $(CXX_STD) $(RELEASE_FLAGS) $(THREAD_FLAGS)
+CXXFLAGS_TEST = $(CXX_STD) $(TEST_FLAGS) $(WARNING_FLAGS) $(SANITIZE_FLAGS) $(THREAD_FLAGS)
+CXXFLAGS_DEBUG = $(CXX_STD) $(DEBUG_FLAGS) $(WARNING_FLAGS) $(SANITIZE_FLAGS) $(THREAD_FLAGS)
+
+
+###                  ###
+#  Source & Libraries  #
+###                  ###
+
+INCLUDES = -I$(SRC_DIR)
+ISA_LIB = lib$(EXECUTABLE).a
+ISA_LIB_TEST = lib$(EXECUTABLE)-test.a
+ISA_LIB_DEBUG = lib$(EXECUTABLE)-debug.a
+
+
+###                     ###
+#  Wildcards & Variables  #
+###                     ###
+
+# For 'libdns.a' library
+LIB_SRCS := $(shell find $(SRC_DIR) -type f -name "*.cpp" | grep -v "$(SRC_DIR)/App/main.cpp")
+LIB_OBJS_RELEASE := $(patsubst $(SRC_DIR)/%, $(RELEASE_BUILD_DIR)/%, $(LIB_SRCS:.cpp=.o))
+LIB_OBJS_TEST := $(patsubst $(SRC_DIR)/%, $(TEST_BUILD_DIR)/%, $(LIB_SRCS:.cpp=.o))
+LIB_OBJS_DEBUG := $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(LIB_SRCS:.cpp=.o))
+
+# For 'dns' executable
+MAIN_SRC = $(SRC_DIR)/App/main.cpp
+MAIN_OBJ_RELEASE = $(patsubst $(SRC_DIR)/%, $(RELEASE_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
+MAIN_OBJ_TEST = $(patsubst $(SRC_DIR)/%, $(TEST_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
+MAIN_OBJ_DEBUG = $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(MAIN_SRC:.cpp=.o))
+
+
+################################################################################
+#                                                                              #
+#                                MAIN COMMANDS                                 #
+#                                                                              #
+################################################################################
+
+# The '.PHONY' command indicates that the following commands are never considered as files
+.PHONY: all build run test clean doc \
+	clean-all clean-build clean-exec clean-test clean-doc \
+	run-test, test-venv, activate-venv, deactivate-venv, clean-venv
+
+# Builds the 'dns' app
+all: build
+
+# Builds the 'dns' via GMake
+build: $(EXECUTABLE)
+
+# Runs the executable with print help argument
+run:
+	@if [ ! -f "$(EXECUTABLE)" ]; then \
+		$(MAKE) build; \
+	fi
+	./$(EXECUTABLE) -h
+
+# Builds and runs the test executable 'dns' and runs the test script
+test:
+	@if [ ! -f "$(EXECUTABLE)" ]; then \
+		$(MAKE) build; \
+	fi
+	@if [ ! -d "$(TEST_DIR)/myenv" ]; then \
+		$(MAKE) test-venv; \
+	fi
+	$(MAKE) run-test
+
+ # Runs some basic specialized cleaning commands
+clean: clean-all
+
+# Generates project documentation into the `doc` directory
+doc:
+	$(MAKE) $(SILENTOPT) clean-doc
+	doxygen Doxyfile
+	@sed -i '' 's/\&lt;tt\&gt;/<tt>/g; s/\&lt;\/tt\&gt;/<\/tt>/g' $(DOC_DIR)/html/index.html
+	@sed -i '' '/\&lt;style\&gt; .smallcaps { font-variant: small-caps; } \&lt;\/style\&gt;/d' $(DOC_DIR)/html/index.html
+	@sed -i '' '/README.md/d' $(DOC_DIR)/doxygen_warnings.log
+	@echo '<html><head><meta http-equiv="refresh" content="0; url=./html/index.html"></head></html>' > $(DOC_DIR)/documentation.html
+
+
+################################################################################
+#                                                                              #
+#                                BUILD TARGETS                                 #
+#                                                                              #
+################################################################################
+
+###                                                                          ###
+#                      COMPILATION OF RELEASE APP VERSION                      #
+###                                                                          ###
+
+$(RELEASE_BUILD_DIR)/$(ISA_LIB): $(LIB_OBJS_RELEASE)
+	@mkdir -p $(RELEASE_BUILD_DIR)
+	ar rcs $(RELEASE_BUILD_DIR)/$(ISA_LIB) $(LIB_OBJS_RELEASE)
+
+$(EXECUTABLE): $(MAIN_OBJ_RELEASE) $(RELEASE_BUILD_DIR)/$(ISA_LIB)
+	$(CXX) $(CXXFLAGS_RELEASE) -o $(EXECUTABLE) $(MAIN_OBJ_RELEASE) -L$(RELEASE_BUILD_DIR) -l$(EXECUTABLE)
+
+$(RELEASE_BUILD_DIR)/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS_RELEASE) $(INCLUDES) -c $< -o $@
+
+################################################################################
+#                                                                              #
+#                        SPECIALIZED 'CLEAN' COMMANDS                          #
+#                                                                              #
+################################################################################
+
+# Removes all created files (build, doc, executable, ...)
+clean-all: clean-build clean-exec clean-test clean-doc
+
+# Removes the 'build' directory
+clean-build:
+	rm -rf $(BUILD_DIR)
+
+# Removes the executable
+clean-exec:
+	rm -f $(EXECUTABLE)
+
+# Removes 'test/bin' folder with test executables
+clean-test:
+	rm -rf $(TEST_BIN_DIR)
+	rm -rf $(TEST_DIR)/test_filter_copies
+	rm -rf $(TEST_DIR)/.pytest_cache
+	$(MAKE) $(SILENTOPT) clean-venv
+
+# Removes generated content of the 'doc' directory
+clean-doc:
+	find $(DOC_DIR) -mindepth 1 ! -path '$(DOC_DIR)/resources*' ! -path '$(DOC_DIR)/raw*' -delete || true
+
+
+################################################################################
+#                                                                              #
+#                               'TEST' COMMANDS                                #
+#                                                                              #
+################################################################################
+
+# Sets executable permissions for the test script and runs it
+run-test: $(EXECUTABLE)
+	@chmod +x $(TEST_DIR)/run.sh
+	cd $(TEST_DIR) && /bin/sh ./run.sh
+
+# Creates a virtual environment for running integration tests
+test-venv:
+	@if [ ! -d "$(TEST_DIR)/myenv" ]; then \
+		python3 -m venv $(TEST_DIR)/myenv; \
+	fi && \
+    $(TEST_DIR)/myenv/bin/python -m pip install --upgrade pip setuptools wheel && \
+    $(TEST_DIR)/myenv/bin/python -m pip install -r $(TEST_DIR)/IntegrationTests/requirements.txt
+
+# Removes the virtual environment for running integration tests
+clean-venv:
+	rm -rf $(TEST_DIR)/myenv
+
+### end of file Makefile.bsd ###
