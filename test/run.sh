@@ -76,9 +76,3 @@ run_pytest "IntegrationTests/ErrorHandlingTest.py"
 run_pytest "IntegrationTests/CompressedNamesTest.py"
 
 echo "=== Integration tests completed! ==="
-
-# Cleanup
-if [ "$KEEP_VENV" != "true" ]; then
-    echo "Removing virtual environment..."
-    rm -rf "$VENV_DIR"
-fi
