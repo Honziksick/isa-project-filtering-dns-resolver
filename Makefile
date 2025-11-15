@@ -29,16 +29,29 @@
 ###                                   ###
 
 # Default shell set to 'shell'
-SHELL = /bin/sh
+SHELL := /bin/sh
 
-# Makefile self-reference
-SELF := Makefile
+# Default goal is build all
+.DEFAULT_GOAL := all
 
 # Flags to suppress 'Entering/Leaving directory' messages
 MAKEFLAGS += --no-print-directory
 
-# Wrapper to choose the appropriate Makefile based on the OS
-.DEFAULT:
+# Disable implicit suffix rules for speed and predictability
+.SUFFIXES:
+
+# Define dispatch targets
+DISPATCH_TARGETS := all build run test help clean doc pack \
+                    clean-all clean-build clean-exec clean-test clean-doc clean-pack \
+                    run-test test-venv activate-venv deactivate-venv clean-venv \
+                    pack-prepare \
+                    developer-mode submission-mode install-dev-dep install-help-dep install-build-dep install-doc-dep install-pack-dep update-dep
+
+# Define phony targets
+.PHONY: $(DISPATCH_TARGETS)
+
+# Dispatcher: forward every target to the platform-specific Makefile
+$(DISPATCH_TARGETS):
 	@os=`uname -s`; \
 	if [ "$$os" = "FreeBSD" ]; then \
 		exec gmake -f Makefile.bsd --no-print-directory "$@"; \

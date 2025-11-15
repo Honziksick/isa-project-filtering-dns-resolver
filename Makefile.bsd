@@ -43,8 +43,8 @@ PACK_NAME = xkalinj00
 # Run 'make' in silent mode (without event output)
 $(VERBOSE)SILENTOPT = -s
 
-# Default shell set to 'bash'
-SHELL = /bin/bash
+# Default shell set to 'shell'
+SHELL = /bin/sh
 
 # Makefile self-reference
 SELF := Makefile.bsd
@@ -136,8 +136,8 @@ MAIN_OBJ_DEBUG = $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(MAIN_SRC:.cpp=
 
 # The '.PHONY' command indicates that the following commands are never considered as files
 .PHONY: all build run test clean doc \
-	clean-all clean-build clean-exec clean-test clean-doc \
-	run-test, test-venv, activate-venv, deactivate-venv, clean-venv
+        clean-all clean-build clean-exec clean-test clean-doc \
+        run-test test-venv activate-venv deactivate-venv clean-venv
 
 # Builds the 'dns' app
 all: build

@@ -151,10 +151,10 @@ MAIN_OBJ_DEBUG = $(patsubst $(SRC_DIR)/%, $(DEBUG_BUILD_DIR)/%, $(MAIN_SRC:.cpp=
 
 # The '.PHONY' command indicates that the following commands are never considered as files
 .PHONY: all build run test help clean doc pack \
-	clean-all clean-build clean-exec clean-test clean-doc clean-pack \
-	run-test, test-venv, activate-venv, deactivate-venv, clean-venv \
-	pack-prepare \
-	developer-mode submission-mode install-dev-dep install-help-dep install-build-dep install-doc-dep install-pack-dep update-dep
+        clean-all clean-build clean-exec clean-test clean-doc clean-pack \
+        run-test test-venv activate-venv deactivate-venv clean-venv \
+        pack-prepare \
+        developer-mode submission-mode install-dev-dep install-help-dep install-build-dep install-doc-dep install-pack-dep update-dep
 
 ### MC # all: # Builds the 'dns' app
 all: build
@@ -415,13 +415,23 @@ pack-prepare:
 		else \
 			echo -e "$(COLOR_RED)\nError: The directory "$(DOC_DIR)/resources" does not exist.$(COLOR_RESET)"; \
 		fi; \
-		if [ -f "Makefile" ]; then \
-			rsync -a Makefile $(ARCHIVE_DIR)/; \
-			sed -i '0,/SUBMISSION_MODE/ {/SUBMISSION_MODE/ s|#||g}' $(ARCHIVE_DIR)/Makefile; \
-            sed -i '0,/SUBMISSION_MODE/ s|^\s*\(.*SUBMISSION_MODE.*\)$$|\1|' $(ARCHIVE_DIR)/Makefile; \
+        if [ -f "Makefile" ]; then \
+            rsync -a Makefile $(ARCHIVE_DIR)/; \
+        else \
+            missing_files=1; \
+        fi; \
+		if [ -f "Makefile.gnu" ]; then \
+			rsync -a Makefile.gnu $(ARCHIVE_DIR)/; \
+			sed -i '0,/SUBMISSION_MODE/ {/SUBMISSION_MODE/ s|#||g}' $(ARCHIVE_DIR)/Makefile.gnu; \
+            sed -i '0,/SUBMISSION_MODE/ s|^\s*\(.*SUBMISSION_MODE.*\)$$|\1|' $(ARCHIVE_DIR)/Makefile.gnu; \
 		else \
 			missing_files=1; \
 		fi; \
+        if [ -f "Makefile.bsd" ]; then \
+            rsync -a Makefile.bsd $(ARCHIVE_DIR)/; \
+        else \
+            missing_files=1; \
+        fi; \
 		if [ -f "CMakeLists.txt" ]; then \
 			rsync -a CMakeLists.txt $(ARCHIVE_DIR)/; \
 		else \
@@ -455,6 +465,12 @@ pack-prepare:
 		if [ ! -f "$(ARCHIVE_DIR)/Makefile" ]; then \
 			echo -e "$(COLOR_RED)Error: The file 'Makefile' was not copied.$(COLOR_RESET)"; \
 		fi; \
+        if [ ! -f "$(ARCHIVE_DIR)/Makefile.gnu" ]; then \
+            echo -e "$(COLOR_RED)Error: The file 'Makefile.gnu' was not copied.$(COLOR_RESET)"; \
+        fi; \
+        if [ ! -f "$(ARCHIVE_DIR)/Makefile.bsd" ]; then \
+            echo -e "$(COLOR_RED)Error: The file 'Makefile.bsd' was not copied.$(COLOR_RESET)"; \
+        fi; \
 		if [ ! -f "$(ARCHIVE_DIR)/CMakeLists.txt" ]; then \
         	echo -e "$(COLOR_RED)Error: The file 'CMakeLists.txt' was not copied.$(COLOR_RESET)"; \
         fi; \
