@@ -37,7 +37,7 @@
 #include <cstring>      // std::strstr()
 
 // Define DEBUG_PRINT to enable debug printing
-#define DEBUG_PRINT
+// #define DEBUG_PRINT
 
 /**
  * @brief Global flag controlling verbose output mode.
